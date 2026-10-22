@@ -36,6 +36,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   distDir: process.env.NEXT_DIST_DIR || ".next",
+  // The social image reads its fonts from node_modules at runtime (src/lib/brand/og-fonts.ts); ship them with it.
+  outputFileTracingIncludes: {
+    "/opengraph-image": ["./node_modules/@fontsource/source-serif-4/files/*-latin-{500,600}-normal.woff", "./node_modules/@fontsource/public-sans/files/*-latin-{400,600}-normal.woff"],
+  },
   experimental: {
     // Documents are uploaded through Server Actions. Storage caps files at 4 MB and Vercel Functions reject bodies
     // over 4.5 MB; the public inquiry form allows up to 3 files of 4 MB in total.

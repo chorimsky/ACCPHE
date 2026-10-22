@@ -9,6 +9,13 @@ import { siteGraph } from "@/lib/seo";
 import { getBlock, getFaqs, getGovernance, getStandards } from "@/server/content";
 import { getSiteContent, publicRecords, publishedArticles } from "@/server/queries/public";
 
+/**
+ * Every public page reads portal-managed content (banner, CMS texts, articles, directory) from the database, so the
+ * site renders per request: scheduled articles appear on their date, record changes reach every page's search index,
+ * and builds never query the production database.
+ */
+export const dynamic = "force-dynamic";
+
 /** Public website shell. Content managed in the portal (banner, status notice) is read on every request. */
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const [content, news, standards, faqs, governance, values, institutions] = await Promise.all([

@@ -96,6 +96,7 @@ the server for every page, action, download and export.
 3. **Secrets** — `AUTH_SECRET` (`openssl rand -base64 48`), `CRON_SECRET` (16+ chars).
 4. **Domain** — `APP_URL=https://<domain>` (no trailing slash). Canonical URLs, sitemap, structured data and email links use it.
 5. **Email** — verify the sending domain in Resend; set `RESEND_API_KEY`, `EMAIL_FROM`, and optionally `SECRETARIAT_EMAIL`.
+   To launch before email is ready, set `EMAIL_DELIVERY=off` instead (messages are kept in the outbox; `EMAIL_FROM` is then optional).
 6. **Security** — set `REQUIRE_STAFF_MFA=1` so staff, reviewers and Commission members must use an authenticator app.
 7. **First administrator** — `npm run admin:create -- "Name" admin@domain` against the production database; open the printed link. Then create staff accounts in *Users & access*.
 8. **Content** — in *Site content*, enter the Secretariat's official email, telephone and address.

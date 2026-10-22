@@ -34,10 +34,6 @@ const schema = z.object({
     .string({ error: "APP_URL is required (e.g. https://www.accphe.org)" })
     .trim()
     .refine((v) => v.startsWith("https://") && !v.endsWith("/"), "APP_URL must start with https:// and have no trailing slash"),
-  EMAIL_FROM: z
-    .string({ error: "EMAIL_FROM is required (e.g. \"ACCPHE Secretariat <no-reply@yourdomain>\")" })
-    .trim()
-    .refine((v) => !v.includes(".example"), "EMAIL_FROM still uses the .example placeholder domain"),
   STORAGE_DRIVER: z.literal("vercel-blob", { error: "STORAGE_DRIVER must be \"vercel-blob\" (local files do not persist on serverless)" }),
   CRON_SECRET: z.string({ error: "CRON_SECRET is required (16+ characters) for the weekly digest" }).min(16),
 });
@@ -51,8 +47,10 @@ export function envProblems(env: NodeJS.ProcessEnv = process.env): string[] {
   if (env.STORAGE_DRIVER === "vercel-blob" && !set(env.BLOB_STORE_ID) && !set(env.BLOB_READ_WRITE_TOKEN)) {
     problems.push("BLOB_STORE_ID: connect a private Vercel Blob store to the project, or set BLOB_READ_WRITE_TOKEN");
   }
-  if (env.EMAIL_DELIVERY !== "off" && !set(env.RESEND_API_KEY)) {
-    problems.push("RESEND_API_KEY is required (or set EMAIL_DELIVERY=off to launch without email)");
+  if (env.EMAIL_DELIVERY !== "off") {
+    if (!set(env.RESEND_API_KEY)) problems.push("RESEND_API_KEY is required (or set EMAIL_DELIVERY=off to launch without email)");
+    if (!set(env.EMAIL_FROM)) problems.push('EMAIL_FROM is required with email delivery (e.g. "ACCPHE Secretariat <no-reply@yourdomain>")');
+    else if (env.EMAIL_FROM!.includes(".example")) problems.push("EMAIL_FROM still uses the .example placeholder domain");
   }
   if (env.DEMO_MODE === "1" && envTarget(env) === "production") {
     problems.push("DEMO_MODE must not be enabled in production (it allows administrators to replace all data with samples)");
