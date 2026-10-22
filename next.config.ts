@@ -41,6 +41,8 @@ const nextConfig: NextConfig = {
     "/opengraph-image": ["./node_modules/@fontsource/source-serif-4/files/*-latin-{500,600}-normal.woff", "./node_modules/@fontsource/public-sans/files/*-latin-{400,600}-normal.woff"],
   },
   experimental: {
+    // Set by `next upgrade --agent=security` (16.4.0 → 16.4.2, security advisory).
+    agentUpgrade: "security",
     // Documents are uploaded through Server Actions. Storage caps files at 4 MB and Vercel Functions reject bodies
     // over 4.5 MB; the public inquiry form allows up to 3 files of 4 MB in total.
     serverActions: { bodySizeLimit: "5mb" },
