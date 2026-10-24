@@ -1,13 +1,13 @@
 import { asc, desc } from "drizzle-orm";
 import { db } from "@/db";
 import { applications, users, USER_STATUS } from "@/db/schema";
-import { ActionButton, PasswordLinkButton } from "@/components/portal/actions";
+import { ActionButton, PasswordLinkButton, SetPasswordButton } from "@/components/portal/actions";
 import { InviteForm } from "@/components/portal/forms";
 import { InfoNote, ModuleBody, ModuleHeader, Pill, Tabs } from "@/components/portal/ui";
 import { PickAndRun, SaveSelect } from "@/components/portal/widgets";
 import { ROLE_INFO } from "@/lib/domain";
 import { fmtDate, fmtRelative } from "@/lib/format";
-import { approveUser, linkApplication, resetUserMfa, sendPasswordLink, setUserRole, setUserStatus } from "@/server/actions/users";
+import { approveUser, linkApplication, resetUserMfa, sendPasswordLink, setUserPassword, setUserRole, setUserStatus } from "@/server/actions/users";
 import { ROLES } from "@/db/schema";
 import { requireModule } from "@/server/auth";
 import { emailEnabled } from "@/server/email";
@@ -114,6 +114,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                             {tab === "active" && (
                               <PasswordLinkButton action={sendPasswordLink.bind(null, u.id)} name={u.name} emailOn={emailEnabled()} />
                             )}
+                            {tab === "active" && u.id !== me.id && <SetPasswordButton action={setUserPassword.bind(null, u.id)} name={u.name} />}
                             {tab === "active" && u.mfaEnabled && (
                               <ActionButton action={resetUserMfa.bind(null, u.id)} className="p-link" confirm={`Reset two-step verification for ${u.name}? Do this only after confirming their identity.`}>
                                 Reset two-step

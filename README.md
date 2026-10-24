@@ -60,6 +60,8 @@ Site search: `/` or Ctrl/Cmd + K. Navigation language: EN / FR / ES / PT (offici
 | Accreditation Commission Member | Decisions (review record, own vote, recusal) |
 | Institution Representative | My application — institution or program (pathway, uploads, correspondence, reports and substantive change once decided) |
 
+Administrators can also give someone a password directly (Users & access → *Set password*, with a generator); by default the person must choose their own at next sign-in, and their other sessions end. *Password link* creates a one-time link instead (shown on screen while email delivery is off).
+
 Everyone has Account settings (profile, notifications, password, two-step verification). Permissions are enforced on
 the server for every page, action, download and export.
 
@@ -110,7 +112,7 @@ the server for every page, action, download and export.
 5. **Email** — verify the sending domain in Resend; set `RESEND_API_KEY`, `EMAIL_FROM`, and optionally `SECRETARIAT_EMAIL`.
    To launch before email is ready, set `EMAIL_DELIVERY=off` instead (messages are kept in the outbox; `EMAIL_FROM` is then optional).
 6. **Security** — set `REQUIRE_STAFF_MFA=1` so staff, reviewers and Commission members must use an authenticator app.
-7. **First administrator** — set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_TOKEN` (`openssl rand -hex 32`) for Production and redeploy; within 24 hours open `/portal/reset/<token>` to choose a password, then remove both variables. (Alternatively, `npm run admin:create -- "Name" admin@domain` against the production database.) Then create staff accounts in *Users & access*.
+7. **First administrator** — set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_TOKEN` (`openssl rand -hex 32`) for Production and redeploy; within 24 hours open `/portal/reset/<token>` to choose a password, then remove both variables. If the link expires, set a *new* token value and redeploy: start-up issues that administrator a fresh 24-hour link (each value works once). (Alternatively, `npm run admin:create -- "Name" admin@domain` against the production database.) Then create staff accounts in *Users & access*.
 8. **Content** — in *Site content*, enter the Secretariat's official email, telephone and address.
 9. **Search** — set `GOOGLE_SITE_VERIFICATION` / `BING_SITE_VERIFICATION`, register the site in Google Search Console and Bing Webmaster Tools, submit `/sitemap.xml`. Replace the generated social image when the official logo is available (`src/app/opengraph-image.tsx`, `src/app/icon.tsx`).
 

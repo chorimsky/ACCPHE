@@ -44,6 +44,8 @@ export const users = sqliteTable(
     applicationId: text("application_id"),
     totpSecret: text("totp_secret"),
     mfaEnabled: integer("mfa_enabled", { mode: "boolean" }).notNull().default(false),
+    /** Set when an administrator sets the password by hand: the person must choose their own at next sign-in. */
+    mustChangePassword: integer("must_change_password", { mode: "boolean" }).notNull().default(false),
     notifyAssign: integer("notify_assign", { mode: "boolean" }).notNull().default(true),
     notifyStatus: integer("notify_status", { mode: "boolean" }).notNull().default(true),
     notifyDigest: integer("notify_digest", { mode: "boolean" }).notNull().default(false),

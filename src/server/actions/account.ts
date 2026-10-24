@@ -46,7 +46,8 @@ export async function changePassword(_prev: ActionState, fd: FormData): Promise<
     const p = passwordProblem(nw);
     if (p) return fail(p);
     if (!(await verifyPassword(cur, user.passwordHash))) return fail("Your current password is incorrect.");
-    await db.update(users).set({ passwordHash: await hashPassword(nw), updatedAt: new Date() }).where(eq(users.id, user.id));
+    if (user.mustChangePassword && (await verifyPassword(nw, user.passwordHash))) return fail("Choose a new password, different from the one you were given.");
+    await db.update(users).set({ passwordHash: await hashPassword(nw), mustChangePassword: false, updatedAt: new Date() }).where(eq(users.id, user.id));
     await revokeUserSessions(user.id, true);
     await rotateSession(user.id);
     await audit({ actorId: user.id, who: user.name, action: "user.password", entityType: "user", entityId: user.id, summary: `${user.name} changed their password` });

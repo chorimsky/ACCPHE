@@ -37,6 +37,8 @@ export function passwordProblem(pw: string): string | null {
 export const mfaRequiredFor = (role: Role) => process.env.REQUIRE_STAFF_MFA === "1" && role !== "institution";
 /** A user who must set up two-step verification first may only use Account settings. */
 export const mfaSetupPending = (user: Pick<User, "role" | "mfaEnabled">) => mfaRequiredFor(user.role) && !user.mfaEnabled;
+/** Something must be done in Account settings before anything else (own password, or required two-step set-up). */
+export const accountSetupPending = (user: Pick<User, "role" | "mfaEnabled" | "mustChangePassword">) => user.mustChangePassword || mfaSetupPending(user);
 
 /* ─────────── Sessions ─────────── */
 
@@ -148,6 +150,7 @@ export async function authorize(mod: ModuleKey): Promise<User> {
   if (!user) throw new UserError("Your session has ended. Sign in again to continue.");
   if (!canAccess(user.role, mod)) throw new UserError("You do not have access to this module.");
   // Enforced here as well as in the portal layout, so actions cannot be called directly to bypass it.
+  if (mod !== "account" && user.mustChangePassword) throw new UserError("Choose your own password in Account settings to continue.");
   if (mod !== "account" && mfaSetupPending(user)) throw new UserError("Set up two-step verification in Account settings to continue.");
   return user;
 }

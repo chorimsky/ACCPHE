@@ -4,7 +4,7 @@ import { applications, auditLog, programRecords, records, users } from "@/db/sch
 import { canAccess, trackOf } from "@/lib/domain";
 import { isoDay } from "@/lib/format";
 import { audit } from "@/server/audit";
-import { currentUser, mfaSetupPending, officeOf } from "@/server/auth";
+import { accountSetupPending, currentUser, officeOf } from "@/server/auth";
 
 /** Cells starting with = + - @ are prefixed so spreadsheet software never evaluates them as formulas. */
 function cell(x: unknown) {
@@ -16,7 +16,7 @@ const csv = (rows: unknown[][]) => "﻿" + rows.map((r) => r.map(cell).join(",")
 
 export async function GET(req: Request, { params }: { params: Promise<{ kind: string }> }) {
   const user = await currentUser();
-  if (user && mfaSetupPending(user)) return new Response("Set up two-step verification first.", { status: 403 });
+  if (user && accountSetupPending(user)) return new Response("Complete your account set-up first.", { status: 403 });
   if (!user) return new Response("Unauthorized", { status: 401 });
   const { kind } = await params;
   let rows: unknown[][];

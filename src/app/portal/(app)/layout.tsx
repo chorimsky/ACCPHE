@@ -13,6 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect(next ? `/portal/sign-in?next=${encodeURIComponent(next)}` : "/portal/sign-in");
   }
   const path = (await headers()).get("x-accphe-path") ?? "";
+  if (user.mustChangePassword && !path.startsWith("/portal/account")) redirect("/portal/account?setup=password");
   if (mfaRequiredFor(user.role) && !user.mfaEnabled && !path.startsWith("/portal/account")) redirect("/portal/account?setup=mfa");
 
   const info = ROLE_INFO[user.role];

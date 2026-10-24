@@ -174,3 +174,96 @@ export function PasswordLinkButton({ action, name, emailOn }: { action: () => Pr
     </span>
   );
 }
+
+/** A strong random password (letters and digits, no look-alike characters). */
+function generatePassword(length = 16): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = crypto.getRandomValues(new Uint32Array(length));
+  const pw = Array.from(bytes, (b) => chars[b % chars.length]).join("");
+  // Guarantee at least one letter and one digit (the password policy).
+  return /\d/.test(pw) && /[a-z]/i.test(pw) ? pw : generatePassword(length);
+}
+
+/** Administrators set a person's password by hand (Users & access). */
+export function SetPasswordButton({ action, name }: { action: (password: string, requireChange: boolean) => Promise<ActionResult>; name: string }) {
+  const [open, setOpen] = useState(false);
+  const [pw, setPw] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [show, setShow] = useState(false);
+  const [requireChange, setRequireChange] = useState(true);
+  const [pending, start] = useTransition();
+  const toast = useToast();
+  const router = useRouter();
+  const reset = () => {
+    setOpen(false);
+    setPw("");
+    setConfirm("");
+    setShow(false);
+    setRequireChange(true);
+  };
+  if (!open)
+    return (
+      <button type="button" className="p-link" onClick={() => setOpen(true)}>
+        Set password
+      </button>
+    );
+  const field = { type: show ? "text" : "password", autoComplete: "new-password", className: "p-input", style: { height: 36, fontSize: 13.5 } } as const;
+  return (
+    <div role="group" aria-label={`Set a password for ${name}`} className="flex w-[320px] max-w-full flex-col gap-2.5 rounded border border-line bg-mist p-3.5 text-left">
+      <label className="p-label">
+        <span>New password for {name}</span>
+        <input {...field} value={pw} onChange={(e) => setPw(e.target.value)} />
+      </label>
+      <label className="p-label">
+        <span>Confirm the password</span>
+        <input {...field} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+      </label>
+      <div className="flex flex-wrap items-center gap-3" style={{ font: "500 12.5px var(--font-sans)" }}>
+        <button
+          type="button"
+          className="p-link"
+          onClick={() => {
+            const g = generatePassword();
+            setPw(g);
+            setConfirm(g);
+            setShow(true);
+          }}
+        >
+          Generate
+        </button>
+        <button type="button" className="p-link" onClick={() => setShow((v) => !v)}>
+          {show ? "Hide" : "Show"}
+        </button>
+        <span className="text-muted">At least 10 characters, with letters and numbers.</span>
+      </div>
+      <label className="flex cursor-pointer items-start gap-2" style={{ font: "400 13px/1.45 var(--font-sans)" }}>
+        <input type="checkbox" checked={requireChange} onChange={(e) => setRequireChange(e.target.checked)} className="mt-[2px] h-4 w-4 flex-none" style={{ accentColor: "var(--color-navy)" }} />
+        <span>Require a new password at next sign-in</span>
+      </label>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="p-btn"
+          style={{ padding: "8px 14px", fontSize: 13 }}
+          disabled={pending}
+          onClick={() => {
+            if (pw !== confirm) return toast("The two passwords do not match.", true);
+            start(async () => {
+              const r = await action(pw, requireChange);
+              if (r.ok) {
+                toast(r.message ?? "Password set");
+                reset();
+                router.refresh();
+              } else toast(r.error, true);
+            });
+          }}
+        >
+          {pending ? "Setting…" : "Set password"}
+        </button>
+        <button type="button" className="p-btn-secondary" style={{ padding: "8px 14px", fontSize: 13 }} onClick={reset}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}

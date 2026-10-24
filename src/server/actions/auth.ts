@@ -67,7 +67,9 @@ export async function signIn(_prev: ActionState, fd: FormData): Promise<ActionSt
     }
     await createSession(user.id, "active");
     await audit({ actorId: user.id, who: user.name, action: "auth.signin", entityType: "user", entityId: user.id, summary: `${user.name} signed in` });
-    const dest = mfaRequiredFor(user.role) ? "/portal/account?setup=mfa" : (safeNext(parsed.data.next) ?? homeFor(user.role));
+    // Straight to Account settings when something must be done there first (a second redirect from the portal layout
+    // during the post-sign-in navigation would leave the page blank).
+    const dest = user.mustChangePassword ? "/portal/account?setup=password" : mfaRequiredFor(user.role) ? "/portal/account?setup=mfa" : (safeNext(parsed.data.next) ?? homeFor(user.role));
     return ok("signed-in", { next: dest });
   });
   if (res.ok && res.message === "mfa") redirect(`/portal/verify${res.data?.next ? `?next=${encodeURIComponent(String(res.data.next))}` : ""}`);
@@ -87,7 +89,7 @@ export async function verifyMfa(_prev: ActionState, fd: FormData): Promise<Actio
     await clearLimit(`mfa:${user.id}`);
     await activateSession();
     await audit({ actorId: user.id, who: user.name, action: "auth.signin", entityType: "user", entityId: user.id, summary: `${user.name} signed in with two-step verification` });
-    return ok("ok", { next: safeNext(fd.get("next")) ?? homeFor(user.role) });
+    return ok("ok", { next: user.mustChangePassword ? "/portal/account?setup=password" : (safeNext(fd.get("next")) ?? homeFor(user.role)) });
   });
   if (res.ok) redirect(String(res.data?.next));
   return res;
@@ -191,7 +193,7 @@ export async function resetPassword(_prev: ActionState, fd: FormData): Promise<A
     if (!used.length) return fail("This link was already used. Request a new one.");
     const [user] = await db.select().from(users).where(eq(users.id, tok.userId));
     if (!user || user.status === "suspended") return fail("This account is not active.");
-    await db.update(users).set({ passwordHash: await hashPassword(parsed.data.password), updatedAt: new Date() }).where(eq(users.id, user.id));
+    await db.update(users).set({ passwordHash: await hashPassword(parsed.data.password), mustChangePassword: false, updatedAt: new Date() }).where(eq(users.id, user.id));
     await revokeUserSessions(user.id);
     await audit({ actorId: user.id, who: user.name, action: "user.password_reset", entityType: "user", entityId: user.id, summary: `${user.name} reset their password` });
     return ok();

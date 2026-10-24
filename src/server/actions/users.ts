@@ -10,7 +10,7 @@ import { ROLE_INFO } from "@/lib/domain";
 import { randomToken } from "@/lib/crypto";
 import { abs } from "@/lib/site";
 import { audit } from "@/server/audit";
-import { authorize, hashPassword, issueResetToken, officeOf, revokeUserSessions } from "@/server/auth";
+import { authorize, hashPassword, issueResetToken, officeOf, passwordProblem, revokeUserSessions } from "@/server/auth";
 import { emailEnabled, trySendEmail } from "@/server/email";
 
 const refresh = () => revalidatePath("/portal", "layout");
@@ -176,5 +176,38 @@ export async function sendPasswordLink(id: string): Promise<ActionResult> {
     }
     await audit({ actorId: user.id, who, action: "user.password_link", entityType: "user", entityId: id, summary: `Password link sent to ${u.name}` });
     return ok(`Password link sent to ${u.email}`);
+  });
+}
+
+/**
+ * Set a person's password by hand (for example when email delivery is off). Their sessions are ended; by default they
+ * must choose their own password at the next sign-in. Administrators change their own password in Account settings.
+ */
+export async function setUserPassword(id: string, password: string, requireChange: boolean): Promise<ActionResult> {
+  return attempt(async () => {
+    const { user, who } = await admin();
+    if (id === user.id) return fail("Change your own password in Account settings.");
+    const u = await load(id);
+    if (!u) return fail("This account no longer exists.");
+    if (u.status !== "active") return fail("Only active accounts can be given a password. Approve or reactivate the account first.");
+    const problem = passwordProblem(password);
+    if (problem) return fail(problem);
+    await db.update(users).set({ passwordHash: await hashPassword(password), mustChangePassword: !!requireChange, updatedAt: new Date() }).where(eq(users.id, id));
+    await revokeUserSessions(id);
+    await audit({
+      actorId: user.id,
+      who,
+      action: "user.password_set",
+      entityType: "user",
+      entityId: id,
+      summary: `Password set by an administrator for ${u.name}${requireChange ? " (must be changed at next sign-in)" : ""}`,
+    });
+    await trySendEmail(
+      u.email,
+      "Your ACCPHE Portal password was set by an administrator",
+      `Hello ${u.name},\n\nAn administrator of the Executive Secretariat set a new password for your ACCPHE Portal account. They will give it to you directly.${requireChange ? " You will be asked to choose your own password when you next sign in." : ""}\n\nIf you did not expect this, contact the Executive Secretariat immediately.`,
+    );
+    refresh();
+    return ok(`Password set for ${u.name}.${requireChange ? " They must choose their own at next sign-in." : ""} Give it to them securely — it is not shown again.`);
   });
 }

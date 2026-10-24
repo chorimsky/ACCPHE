@@ -158,6 +158,43 @@ test.describe.serial("accounts and sign-in", () => {
     await expect(page).toHaveURL(/\/portal\/overview$/);
   });
 
+  test("an administrator sets a password by hand; the person must choose their own at next sign-in", async ({ page }) => {
+    const TEMP = "Temporary-Pass-2026";
+    const OWN = "My-Own-Pass-2026-x";
+    await signIn(page, ACCOUNTS.admin);
+    await page.goto("/portal/users?status=active");
+    const row = page.getByRole("row").filter({ hasText: EMAIL });
+    await row.getByRole("button", { name: "Set password" }).click();
+    const box = row.getByRole("group", { name: new RegExp(`Set a password for ${NAME}`) });
+    await box.getByLabel(/New password for/).fill(TEMP);
+    await box.getByLabel("Confirm the password").fill("Mismatch-2026-x");
+    await box.getByRole("button", { name: "Set password" }).click();
+    await toast(page, "The two passwords do not match.");
+    await box.getByLabel("Confirm the password").fill(TEMP);
+    await expect(box.getByLabel("Require a new password at next sign-in")).toBeChecked();
+    await box.getByRole("button", { name: "Set password" }).click();
+    await toast(page, /Password set for .*must choose their own at next sign-in/);
+
+    await page.context().clearCookies();
+    await page.goto("/portal/sign-in");
+    await page.getByLabel("Email").fill(EMAIL);
+    await page.getByLabel("Password", { exact: true }).fill(TEMP);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL(/\/portal\/account\?setup=password/);
+    await expect(page.getByText(/An administrator set a temporary password/)).toBeVisible();
+    await page.goto("/portal/applications");
+    await expect(page).toHaveURL(/\/portal\/account\?setup=password/);
+
+    await page.getByLabel("Current password", { exact: true }).fill(TEMP);
+    await page.getByLabel("New password", { exact: true }).fill(OWN);
+    await page.getByRole("button", { name: "Change password" }).click();
+    await toast(page, /Password updated/);
+    await page.goto("/portal/applications");
+    await expect(page).toHaveURL(/\/portal\/applications$/);
+    await signIn(page, EMAIL, OWN);
+    await expect(page).toHaveURL(/\/portal\/overview$/);
+  });
+
   test("forgotten password gives the same answer whether or not the account exists", async ({ page }) => {
     for (const email of [EMAIL, `nobody.${SUFFIX}@example.org`]) {
       await page.context().clearCookies();

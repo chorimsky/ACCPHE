@@ -14,6 +14,11 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       <ModuleHeader mod="account" />
       <ModuleBody>
         <div className="flex max-w-[820px] flex-col gap-6">
+          {user.mustChangePassword && (
+            <div role="alert" className="alert-error" style={{ fontSize: 14 }}>
+              An administrator set a temporary password for your account. Choose your own password below (under Security) to continue to the portal.
+            </div>
+          )}
           {required && !user.mfaEnabled && (
             <div role="alert" className="alert-error" style={{ fontSize: 14 }}>
               Two-step verification is required for your role. Set it up below to continue to the portal.

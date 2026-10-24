@@ -85,5 +85,13 @@ export const MIGRATIONS: BundledMigration[] = [
       "ALTER TABLE `applications` ADD `program_learners` text DEFAULT '' NOT NULL;",
       "CREATE INDEX `applications_kind_idx` ON `applications` (`kind`);"
     ]
+  },
+  {
+    "tag": "0003_conscious_vision",
+    "when": 1792868844511,
+    "hash": "726a3dcc9741e0c7041ae7415a4c46199c749efd454853887746c7a6db761a27",
+    "statements": [
+      "ALTER TABLE `users` ADD `must_change_password` integer DEFAULT false NOT NULL;"
+    ]
   }
 ];
