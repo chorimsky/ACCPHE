@@ -83,22 +83,22 @@ the server for every page, action, download and export.
 | `npm run dev` / `build` / `start` | Develop, build, serve |
 | `npm run typecheck`, `npm run lint` | Static checks |
 | `npm run db:push` | Apply the schema to the local SQLite file |
-| `npm run db:generate` | Create a migration after changing `src/db/schema.ts` |
-| `npm run db:migrate` | Apply migrations (use this for Turso / production) |
+| `npm run db:generate` | Create a migration after changing `src/db/schema.ts` (also bundles it for production start-up) |
+| `npm run db:migrate` | Apply migrations by hand (production also applies them when it starts) |
 | `npm run db:seed` / `db:reset` | Load demonstration data (local databases only) |
 | `npm run admin:create -- "Full Name" admin@domain` | Create the first administrator; prints a one-time link to set the password |
 | `npm run test:e2e` | End-to-end tests against a production build on an isolated database (port 3200). First time: `npx playwright install chromium` |
 
 ## Going live (Vercel)
 
-1. **Database** — create a Turso database (or add the Turso integration). Set `DATABASE_URL` and `DATABASE_AUTH_TOKEN`, then run `npm run db:migrate` with those values.
+1. **Database** — add the Turso integration (or set `DATABASE_URL` and `DATABASE_AUTH_TOKEN`). Production applies pending migrations when it starts (`src/server/bootstrap.ts`).
 2. **Files** — connect a **private** Vercel Blob store and set `STORAGE_DRIVER=vercel-blob`.
 3. **Secrets** — `AUTH_SECRET` (`openssl rand -base64 48`), `CRON_SECRET` (16+ chars).
 4. **Domain** — `APP_URL=https://<domain>` (no trailing slash). Canonical URLs, sitemap, structured data and email links use it.
 5. **Email** — verify the sending domain in Resend; set `RESEND_API_KEY`, `EMAIL_FROM`, and optionally `SECRETARIAT_EMAIL`.
    To launch before email is ready, set `EMAIL_DELIVERY=off` instead (messages are kept in the outbox; `EMAIL_FROM` is then optional).
 6. **Security** — set `REQUIRE_STAFF_MFA=1` so staff, reviewers and Commission members must use an authenticator app.
-7. **First administrator** — `npm run admin:create -- "Name" admin@domain` against the production database; open the printed link. Then create staff accounts in *Users & access*.
+7. **First administrator** — set `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_TOKEN` (`openssl rand -hex 32`) for Production and redeploy; within 24 hours open `/portal/reset/<token>` to choose a password, then remove both variables. (Alternatively, `npm run admin:create -- "Name" admin@domain` against the production database.) Then create staff accounts in *Users & access*.
 8. **Content** — in *Site content*, enter the Secretariat's official email, telephone and address.
 9. **Search** — set `GOOGLE_SITE_VERIFICATION` / `BING_SITE_VERIFICATION`, register the site in Google Search Console and Bing Webmaster Tools, submit `/sitemap.xml`. Replace the generated social image when the official logo is available (`src/app/opengraph-image.tsx`, `src/app/icon.tsx`).
 

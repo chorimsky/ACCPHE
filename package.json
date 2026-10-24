@@ -5,11 +5,12 @@
   "description": "ACCPHE public website and Staff & Institution Portal",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/bundle-migrations.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "db:generate": "drizzle-kit generate",
+    "db:generate": "drizzle-kit generate && node scripts/bundle-migrations.mjs",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "node --env-file-if-exists=.env.local scripts/guard-local-db.mjs && drizzle-kit push --force",
     "db:seed": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/seed.ts",

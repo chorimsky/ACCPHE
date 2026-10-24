@@ -38,9 +38,6 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // The social image reads its fonts from node_modules at runtime (src/lib/brand/og-fonts.ts); ship them with it.
   outputFileTracingIncludes: {
-    // Migrations applied at start-up by src/server/bootstrap.ts.
-    "/*": ["./drizzle/**/*"],
-    "/**/*": ["./drizzle/**/*"],
     "/opengraph-image": ["./node_modules/@fontsource/source-serif-4/files/*-latin-{500,600}-normal.woff", "./node_modules/@fontsource/public-sans/files/*-latin-{400,600}-normal.woff"],
   },
   experimental: {
