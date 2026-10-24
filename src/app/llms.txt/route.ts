@@ -25,6 +25,7 @@ export async function GET() {
 ## Pages
 - [About the Council](${abs("/about")}): identity, history, vision, mission, purpose, values, strategic objectives.
 - [Accreditation](${abs("/accreditation")}): objectives, eligibility, evaluation pathway, classifications, maintaining accreditation, FAQ.
+- [Independent Program Accreditation & Recognition](${abs("/accreditation/programs")}): program-level accreditation or recognition for certificate, diploma, CPD, executive, ministry and professional training programs; eight program standards; six-step process; disclosure (not government approval or USDE/CHEA recognition).
 - [Standards & Policies](${abs("/standards")}): twelve standards, criteria and evidence, Code of Ethics, complaints and appeals.
 - [Governance](${abs("/governance")}): governing bodies and executive structure.
 - [Institutional Directory](${abs("/directory")}): verify membership and accreditation status.

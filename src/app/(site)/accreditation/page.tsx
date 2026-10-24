@@ -154,6 +154,22 @@ export default async function AccreditationPage() {
 
           <StatusMatrix title="Three classifications, clearly distinguished" intro="Use this summary when describing or verifying an institution’s status. Only Accredited Institution status may be described as accreditation." />
 
+          <section id="c-programs" aria-labelledby="c-programs-h" className="flex flex-col gap-5 border border-line p-8" style={{ borderTop: "3px solid var(--color-navy)" }}>
+            <Eyebrow>Program-Level Accreditation</Eyebrow>
+            <h2 id="c-programs-h" className="h2-sm">
+              Independent Program Accreditation &amp; Recognition
+            </h2>
+            <p className="body-lg">
+              Certificate and diploma programs, executive education, continuing professional development, ministry training and other specialized programs can be evaluated individually against eight program
+              standards — without the provider necessarily pursuing full institutional accreditation.
+            </p>
+            <div>
+              <Link href="/accreditation/programs" className="btn btn-primary">
+                Explore Program Accreditation
+              </Link>
+            </div>
+          </section>
+
           <section id="c-maintaining" aria-labelledby="c-maintaining-h" className="flex flex-col gap-[22px]">
             <Eyebrow>Maintaining Accreditation</Eyebrow>
             <h2 id="c-maintaining-h" className="h2-sm">

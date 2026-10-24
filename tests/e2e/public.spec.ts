@@ -2,13 +2,26 @@ import { expect, test } from "@playwright/test";
 
 test.describe("public website", () => {
   test("every page renders with one h1, canonical URL and structured data", async ({ page }) => {
-    for (const path of ["/", "/about", "/accreditation", "/standards", "/governance", "/directory", "/news", "/apply", "/contact", "/privacy", "/accessibility", "/terms"]) {
+    for (const path of ["/", "/about", "/accreditation", "/accreditation/programs", "/standards", "/governance", "/directory", "/news", "/apply", "/contact", "/privacy", "/accessibility", "/terms"]) {
       const res = await page.goto(path);
       expect(res?.status(), path).toBe(200);
       await expect(page.locator("h1"), path).toHaveCount(1);
       await expect(page.locator('link[rel="canonical"]'), path).toHaveAttribute("href", path === "/" ? /^https?:\/\/[^/]+\/?$/ : new RegExp(`${path}$`));
       expect(await page.locator('script[type="application/ld+json"]').count(), path).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  test("program accreditation has its own page under Accreditation", async ({ page }) => {
+    await page.goto("/accreditation");
+    await page.getByRole("link", { name: "Explore Program Accreditation" }).click();
+    await expect(page).toHaveURL(/\/accreditation\/programs$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Independent Program Accreditation & Recognition");
+    await expect(page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: "Accreditation" })).toBeVisible();
+    await expect(page.locator("#p-standards li")).toHaveCount(8);
+    await expect(page.locator("#p-process li")).toHaveCount(6);
+    await expect(page.getByText("does not, by itself, constitute government approval")).toBeVisible();
+    await page.getByRole("link", { name: "Enquire About Program Review" }).first().click();
+    await expect(page.locator('select[name="route"]')).toHaveValue("Program accreditation");
   });
 
   test("unknown addresses show the site 404 with navigation", async ({ page }) => {

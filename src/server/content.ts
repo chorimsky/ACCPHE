@@ -4,7 +4,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { contentBlocks } from "@/db/schema";
 import { BLOCK_BY_KEY, type Block, type Field } from "@/content/cms";
-import { CLASSES, PILLARS, VMP, type TextItem } from "@/content/site";
+import { CLASSES, PILLARS, PROGRAM_ACCREDITATION, VMP, type TextItem } from "@/content/site";
 
 const str = (max: number, label: string) => z.string().trim().max(max, `${label} is too long.`);
 const req = (max: number, label: string) => str(max, label).min(1, `${label} is required.`);
@@ -114,4 +114,14 @@ export async function getGovernance(): Promise<GovBody[]> {
 export async function standardsLabel() {
   const m = await getStandardsMeta();
   return m.status === "adopted" ? { adjective: "Adopted", phrase: `adopted by the Council${m.adoptedOn ? ` on ${m.adoptedOn}` : ""}`, adopted: true, adoptedOn: m.adoptedOn } : { adjective: "Proposed", phrase: "recommended for formal adoption by the Council", adopted: false, adoptedOn: "" };
+}
+
+export type ProgramAccreditation = Omit<typeof PROGRAM_ACCREDITATION, "standards" | "steps"> & { standards: TextItem[]; steps: TextItem[] };
+export async function getProgramAccreditation(): Promise<ProgramAccreditation> {
+  const [page, standards, steps] = await Promise.all([
+    getBlock<Omit<ProgramAccreditation, "standards" | "steps">>("programs.page"),
+    getBlock<TextItem[]>("programs.standards"),
+    getBlock<TextItem[]>("programs.steps"),
+  ]);
+  return { ...page, standards, steps };
 }

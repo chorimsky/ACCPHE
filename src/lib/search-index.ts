@@ -4,6 +4,7 @@ import type { SearchItem } from "@/components/site/search";
 const PAGES: [string, string, string][] = [
   ["about", "About the Council", "/about"],
   ["accreditation", "Accreditation", "/accreditation"],
+  ["programs", "Independent Program Accreditation & Recognition", "/accreditation/programs"],
   ["standards", "Standards & Policies", "/standards"],
   ["governance", "Governance", "/governance"],
   ["directory", "Institutional Directory", "/directory"],

@@ -347,7 +347,7 @@ export const caseNotes = sqliteTable(
 
 /* ─────────── Website correspondence and content ─────────── */
 
-export const MESSAGE_ROUTES = ["General inquiry", "Membership and accreditation", "Status verification", "Standards & Ethics Committee", "Account request"] as const;
+export const MESSAGE_ROUTES = ["General inquiry", "Membership and accreditation", "Program accreditation", "Status verification", "Standards & Ethics Committee", "Account request"] as const;
 
 export const messages = sqliteTable(
   "messages",

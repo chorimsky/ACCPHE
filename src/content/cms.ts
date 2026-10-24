@@ -5,7 +5,7 @@
  * in ./site.ts. Lists whose length the system depends on are fixed: 8 pathway stages, 12 standards, 3 classifications,
  * vision/mission/purpose. Editors can reword them but not add or remove entries.
  */
-import { ACCREDITATION_OBJECTIVES, CLASSES, ELIGIBILITY, ETHICS, EXECUTIVE, FAQS, GOVERNANCE, GOVERNING_BODIES, OBJECTIVES, PILLARS, POLICIES, PROCESS, STANDARDS, VALUES, VMP } from "./site";
+import { ACCREDITATION_OBJECTIVES, CLASSES, ELIGIBILITY, ETHICS, EXECUTIVE, FAQS, GOVERNANCE, GOVERNING_BODIES, OBJECTIVES, PILLARS, POLICIES, PROCESS, PROGRAM_ACCREDITATION as PA, STANDARDS, VALUES, VMP } from "./site";
 
 export type Field =
   | { name: string; label: string; type: "text"; max?: number; hint?: string }
@@ -182,6 +182,47 @@ export const BLOCKS: BlockDef[] = [
     usedOn: "/accreditation#c-faq",
     block: { kind: "list", min: 1, max: 30, item: [t("q", "Question", 200), ta("a", "Answer", 4, 2000)], itemLabel: (v) => String(v.q) },
     default: FAQS,
+  },
+  {
+    key: "programs.page",
+    group: "Program Accreditation",
+    title: "Independent Program Accreditation — page text",
+    description: "Introduction, eligible programs, independence, what accredited programs receive, and the disclosure.",
+    usedOn: "/accreditation/programs",
+    block: {
+      kind: "object",
+      fields: [
+        t("tagline", "Line under the page title", 200),
+        { name: "intro", label: "Introduction", type: "paragraphs", hint: "Separate paragraphs with a blank line." },
+        { name: "what", label: "What is Independent Program Accreditation?", type: "paragraphs" },
+        { name: "eligible", label: "Programs eligible for review", type: "lines", hint: "One program type per line." },
+        ta("eligibleNote", "Note under the eligible programs", 2, 600),
+        { name: "independence", label: "Our commitment to institutional independence", type: "paragraphs" },
+        ta("receiveIntro", "What accredited programs receive — introduction", 2, 400),
+        { name: "receive", label: "What accredited programs receive", type: "lines", hint: "One item per line." },
+        ta("receiveNote", "Note under what accredited programs receive", 2, 600),
+        { name: "disclosure", label: "Important accreditation disclosure", type: "paragraphs" },
+      ],
+    },
+    default: { tagline: PA.tagline, intro: PA.intro, what: PA.what, eligible: PA.eligible, eligibleNote: PA.eligibleNote, independence: PA.independence, receiveIntro: PA.receiveIntro, receive: PA.receive, receiveNote: PA.receiveNote, disclosure: PA.disclosure },
+  },
+  {
+    key: "programs.standards",
+    group: "Program Accreditation",
+    title: "Program evaluation standards",
+    description: "The principal areas programs are evaluated against.",
+    usedOn: "/accreditation/programs#p-standards",
+    block: { kind: "list", min: 1, max: 16, item: [t("t", "Area", 160), ta("d", "Description", 3, 800)], itemLabel: (v) => String(v.t) },
+    default: PA.standards,
+  },
+  {
+    key: "programs.steps",
+    group: "Program Accreditation",
+    title: "How program accreditation works",
+    description: "The steps from application to ongoing quality assurance.",
+    usedOn: "/accreditation/programs#p-process",
+    block: { kind: "list", min: 1, max: 12, item: [t("t", "Step", 160), ta("d", "Description", 3, 800)], itemLabel: (v, i) => `Step ${i + 1}: ${String(v.t)}` },
+    default: PA.steps,
   },
 
   /* Standards */

@@ -26,6 +26,24 @@ test.describe.serial("content management", () => {
     await expect(page.getByRole("button", { name: "What is institutional accreditation?" })).toBeVisible();
   });
 
+  test("the program accreditation page is editable and restorable", async ({ page }) => {
+    autoConfirm(page);
+    await signIn(page, ACCOUNTS.editor);
+    await page.goto("/portal/content/pages");
+    await page.getByRole("link", { name: /Independent Program Accreditation — page text/ }).click();
+    await page.getByLabel("Line under the page title").fill("Quality assurance for innovative programs (edited)");
+    await page.getByRole("button", { name: "Save and publish" }).click();
+    await toast(page, "changes are live");
+    await page.goto("/accreditation/programs");
+    await expect(page.getByText("Quality assurance for innovative programs (edited)")).toBeVisible();
+
+    await page.goto("/portal/content/pages/programs.page");
+    await page.getByRole("button", { name: "Restore official text" }).click();
+    await toast(page, "Restored");
+    await page.goto("/accreditation/programs");
+    await expect(page.getByText("Advancing Educational Innovation Through Independent Quality Assurance")).toBeVisible();
+  });
+
   test("fixed lists cannot lose entries the workflow depends on", async ({ page }) => {
     await signIn(page, ACCOUNTS.editor);
     await page.goto("/portal/content/pages/standards");

@@ -8,6 +8,7 @@ const PAGES: [string, MetadataRoute.Sitemap[number]["changeFrequency"], number][
   ["/", "weekly", 1],
   ["/about", "monthly", 0.8],
   ["/accreditation", "monthly", 0.9],
+  ["/accreditation/programs", "monthly", 0.8],
   ["/standards", "monthly", 0.9],
   ["/governance", "monthly", 0.7],
   ["/directory", "weekly", 0.9],

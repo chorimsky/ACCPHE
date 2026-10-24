@@ -266,11 +266,11 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     "q": "Does accreditation automatically authorize an institution to award degrees?",
-    "a": "No. Degree-awarding authority depends on the laws and regulatory requirements of the institution’s jurisdiction. Accreditation by a nongovernmental body does not automatically provide legal authorization to operate or award qualifications."
+    "a": "ACCPHE accreditation strengthens institutional credibility by affirming commitment to academic excellence and quality standards. While degree-awarding authority remains subject to applicable national laws and regulations, accreditation provides valuable independent recognition that supports institutional development and educational integrity."
   },
   {
     "q": "Does ACCPHE accreditation guarantee international recognition of degrees?",
-    "a": "No. Recognition of institutions and qualifications depends on the policies of governments, regulators, universities, employers, professional bodies, and other competent authorities. An ACCPHE award should not be represented as a guarantee of recognition or transferability."
+    "a": "ACCPHE accreditation positions institutions for greater international visibility, credibility, and potential academic partnerships. While recognition of degrees ultimately depends on relevant authorities and institutional policies, accreditation demonstrates commitment to established quality standards and strengthens an institution’s international profile."
   },
   {
     "q": "Can an institution lose its accreditation?",
@@ -595,6 +595,10 @@ export const CONTACT_ROUTES: TextItem[] = [
     "d": "Pathways, eligibility, and application procedures."
   },
   {
+    "t": "Program accreditation",
+    "d": "Independent accreditation or recognition of a certificate, diploma, or training program."
+  },
+  {
     "t": "Status verification",
     "d": "Confirming an institution’s membership or accreditation status."
   },
@@ -649,6 +653,10 @@ export const PAGE_TOCS: Record<"about" | "accreditation", [string, string][]> = 
       "Classifications"
     ],
     [
+      "c-programs",
+      "Program accreditation"
+    ],
+    [
       "c-maintaining",
       "Maintaining accreditation"
     ],
@@ -668,6 +676,10 @@ export const SEO: Record<string, [string, string]> = {
   "about": [
     "About the Council — Mission, Vision, Values | ACCPHE",
     "ACCPHE is an independent, internationally oriented quality assurance organization advancing academic excellence, institutional integrity, and responsible governance in Christian and private higher education."
+  ],
+  "programs": [
+    "Independent Program Accreditation & Recognition | ACCPHE",
+    "Program-level accreditation and recognition for certificate, diploma, CPD, executive, ministry and professional training programs: eligibility, the eight evaluation standards, the six-step process, and disclosures."
   ],
   "accreditation": [
     "Accreditation Process, Eligibility & Classifications | ACCPHE",
@@ -993,3 +1005,69 @@ export const SEED_ARTICLES = [
     "body": "The Council invites experienced academics, institutional leaders, and quality assurance professionals to express interest in serving on institutional review teams.\n\nReviewers assess applications, self-study reports, and supporting evidence against the approved standards, and may take part in interviews, document verification, and on-site or authorized virtual evaluations.\n\nReviewers are expected to act with integrity, impartiality, and professional competence; to protect the confidentiality of nonpublic institutional information; and to disclose any actual, potential, or perceived conflict of interest and recuse themselves where required.\n\nExpressions of interest may be submitted through the Contact page."
   }
 ];
+
+/** Independent Program Accreditation & Recognition (/accreditation/programs). */
+export const PROGRAM_ACCREDITATION = {
+  tagline: "Advancing Educational Innovation Through Independent Quality Assurance",
+  intro: [
+    "At the Accreditation & Compliance Council for Christian and Private Higher Education (ACCPHE), we believe that educational excellence is not defined solely by the size, structure, or institutional status of an education provider. Excellence can also emerge through innovative certificate and diploma programs, specialized professional training, continuing education, and independent learning initiatives.",
+    "Our Independent Program Accreditation and Recognition framework is designed to provide external quality assurance for educational programs developed and delivered by universities, colleges, Christian institutions, professional academies, training organizations, and independent education providers.",
+    "The framework supports educational innovation while promoting academic integrity, professional relevance, measurable learning outcomes, and continuous improvement.",
+  ],
+  what: [
+    "Independent Program Accreditation is a structured quality assurance process through which ACCPHE evaluates an individual educational or professional development program against established standards.",
+    "Unlike institutional accreditation, which examines an institution as a whole, program-level accreditation focuses on the design, delivery, assessment, and educational quality of a specific program.",
+    "This enables eligible education providers to submit individual certificate programs, professional development courses, and specialized training initiatives for independent evaluation without necessarily pursuing full institutional accreditation.",
+    "Programs that satisfy the applicable ACCPHE standards may receive formal program-level accreditation or recognition within the scope of the Council’s independent quality assurance framework.",
+  ],
+  eligible: [
+    "Professional certificate and diploma programs",
+    "Executive education and leadership development programs",
+    "Continuing Professional Development (CPD) courses",
+    "Business, entrepreneurship, and management training",
+    "Christian ministry and theological certificate programs",
+    "Digital transformation, artificial intelligence, and technology training",
+    "Vocational and workforce development programs",
+    "Professional coaching, consulting, and facilitation programs",
+    "Short courses, microcredentials, and specialized learning pathways",
+    "Innovative interdisciplinary and industry-focused educational programs",
+  ],
+  eligibleNote: "Eligibility remains subject to ACCPHE’s published standards, applicable regulations, and the nature of the qualification being offered.",
+  independence: [
+    "ACCPHE recognizes that educational institutions and independent training providers have distinct missions, educational philosophies, instructional approaches, and professional objectives. Our program accreditation framework is intended to preserve this diversity.",
+    "Institutions retain responsibility for curriculum ownership, instructional delivery, learner admission, program scheduling, tuition arrangements, and certificate issuance, subject to applicable laws and the quality requirements attached to their accreditation status.",
+    "ACCPHE’s role is to provide independent evaluation, establish clear quality expectations, verify compliance, and support continuous educational improvement.",
+  ],
+  standards: [
+    { t: "Program Purpose and Relevance", d: "Clear educational objectives, identified learner needs, and demonstrable academic, professional, or societal relevance." },
+    { t: "Curriculum Quality", d: "Coherent curriculum structure, appropriate content, instructional depth, and alignment with intended learning outcomes." },
+    { t: "Learning Outcomes", d: "Clearly defined knowledge, competencies, and practical capabilities that learners should demonstrate upon completion." },
+    { t: "Instructional Competence", d: "Appropriate qualifications, professional expertise, and instructional capabilities of faculty, facilitators, and trainers." },
+    { t: "Assessment and Certification", d: "Credible learner assessment methods, transparent completion requirements, and reliable certification procedures." },
+    { t: "Learning Experience and Resources", d: "Suitable teaching methods, educational materials, learner support, and accessible learning environments." },
+    { t: "Ethical Standards and Institutional Integrity", d: "Honest public representation, responsible administration, learner protection, and compliance with applicable requirements." },
+    { t: "Quality Assurance and Continuous Improvement", d: "Effective mechanisms for learner feedback, program evaluation, performance monitoring, and curriculum enhancement." },
+  ],
+  steps: [
+    { t: "Application", d: "The institution submits an application identifying the proposed program, its objectives, intended learners, delivery model, and responsible education provider." },
+    { t: "Documentation and Self-Evaluation", d: "The applicant provides curriculum documentation, learning outcomes, assessment procedures, instructor qualifications, and relevant quality assurance evidence." },
+    { t: "Independent Program Review", d: "Qualified reviewers assess the program against ACCPHE’s established evaluation standards. Additional evidence, interviews, or demonstrations may be requested." },
+    { t: "Accreditation Decision", d: "The authorized accreditation body considers the evaluation findings and determines whether the program satisfies the requirements for accreditation or recognition." },
+    { t: "Certification and Public Verification", d: "Approved programs receive formal documentation specifying their accreditation or recognition status, approved program title, scope, validity period, and verification reference." },
+    { t: "Ongoing Quality Assurance", d: "Recognized providers maintain compliance with applicable standards and participate in periodic monitoring, reporting, and renewal reviews." },
+  ],
+  receiveIntro: "Subject to the approved program category and applicable accreditation policies, successful applicants will receive:",
+  receive: [
+    "An official ACCPHE program accreditation or recognition certificate",
+    "A unique program verification number",
+    "Authorization to use the appropriate ACCPHE program recognition statement or mark",
+    "Inclusion in the ACCPHE public directory of approved programs",
+    "A formal program evaluation outcome and recommendations for improvement",
+    "Access to applicable quality assurance guidance and professional development resources",
+  ],
+  receiveNote: "Accreditation applies exclusively to the approved program and does not automatically extend to the institution or its other educational offerings.",
+  disclosure: [
+    "ACCPHE program accreditation or recognition represents an independent evaluation against ACCPHE’s own published quality assurance standards. It does not, by itself, constitute government approval, authorization to operate an educational institution, recognition by the United States Department of Education or the Council for Higher Education Accreditation, professional licensure approval, or guaranteed acceptance of academic credit by other institutions.",
+    "Providers remain responsible for securing all licenses, approvals, and authorizations required in the jurisdictions where they operate.",
+  ],
+};

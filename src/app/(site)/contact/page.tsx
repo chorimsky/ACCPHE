@@ -11,6 +11,7 @@ export const metadata = seoFor("contact", "/contact");
 const TOPICS: Record<string, string> = {
   general: "General inquiry",
   membership: "Membership and accreditation",
+  programs: "Program accreditation",
   verification: "Status verification",
   ethics: "Standards & Ethics Committee",
 };
