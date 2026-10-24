@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { applications, cases, CLASSIFICATIONS, users } from "@/db/schema";
+import { applications, cases, programRecords, records, users } from "@/db/schema";
 import { ActionButton, NoteComposer } from "@/components/portal/actions";
 import { appPill, Back, Card, docPill, ModuleBody, ModuleHeader, Pill, Stepper, type PillTone } from "@/components/portal/ui";
 import { AdvanceButton, CheckItem, PickAndRun, SaveSelect, UploadButton } from "@/components/portal/widgets";
 import { addApplicationNote, assignReviewer, decide, moveStage, removeReviewer, setOfficer, setRequirementStatus, staffUpload, toggleCheck } from "@/server/actions/applications";
-import { COMMISSION_QUORUM, DECISION_LABELS, DECISION_STAGE, EVALUATION_STAGE, LAST_STAGE, STAGE_CHECKS, STAGE_DESC, STAGES } from "@/lib/domain";
+import { appTitle, COMMISSION_QUORUM, trackOf } from "@/lib/domain";
 import { fmtDate, fmtRelative } from "@/lib/format";
 import { requireModule } from "@/server/auth";
 import { applicationDetail, groupFiles, officerOptions } from "@/server/services/applications";
@@ -15,12 +15,12 @@ import { UPLOAD_ACCEPT } from "@/server/storage";
 
 export const metadata = { title: "Application" };
 
-const NOTE_TAG: Record<string, [string, PillTone]> = {
+const noteTag = (party: string): Record<string, [string, PillTone]> => ({
   system: ["System", "outline"],
   staff: ["Internal note", "soft"],
-  message: ["Sent to institution", "navy"],
-  institution: ["From institution", "warn"],
-};
+  message: [`Sent to ${party}`, "navy"],
+  institution: [`From ${party}`, "warn"],
+});
 
 const counts = (ratings: string[]) => ({
   met: ratings.filter((x) => x === "met").length,
@@ -36,16 +36,25 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
   if (!exists) notFound();
   const d = await applicationDetail(id);
   const { app } = d;
-  const [officers, reviewerPool, linkedAccounts, linkedCases] = await Promise.all([
+  const T = trackOf(app);
+  const program = app.kind === "program";
+  const NOTE_TAG = noteTag(T.party);
+  const [officers, reviewerPool, linkedAccounts, linkedCases, linkedRecord] = await Promise.all([
     officerOptions(),
     db.select({ id: users.id, name: users.name, org: users.org }).from(users).where(and(eq(users.role, "reviewer"), eq(users.status, "active"))).orderBy(asc(users.name)),
     db.select({ name: users.name, email: users.email, status: users.status }).from(users).where(and(eq(users.applicationId, id), eq(users.role, "institution"))),
     db.select({ id: cases.id, ref: cases.ref, type: cases.type, subject: cases.subject, stage: cases.stage }).from(cases).where(eq(cases.applicationId, id)),
+    program
+      ? db.select({ id: programRecords.id, status: programRecords.status, label: programRecords.verification }).from(programRecords).where(eq(programRecords.applicationId, id))
+      : db.select({ id: records.id, status: records.status, label: records.name }).from(records).where(eq(records.applicationId, id)),
   ]);
+  const record = linkedRecord[0];
+  const recordHref = record ? (program ? `/portal/directory/programs/${record.id}` : `/portal/directory/${record.id}`) : program ? "/portal/directory?kind=programs" : "/portal/directory";
   const declined = app.decision === "Declined";
-  const decided = declined || app.stage === LAST_STAGE;
-  const atDecision = !declined && app.stage === DECISION_STAGE && !app.decision;
-  const checks = STAGE_CHECKS[app.stage] ?? [];
+  const decided = declined || app.stage > T.decisionStage;
+  const atDecision = !declined && app.stage === T.decisionStage && !app.decision;
+  const canAdvance = !declined && app.stage !== T.decisionStage && app.stage < T.lastStage;
+  const checks = T.checks[app.stage] ?? [];
   const got = app.checks[String(app.stage)] ?? [];
   const nDone = checks.filter((_, i) => got[i]).length;
   const byReq = groupFiles(d.files);
@@ -59,8 +68,18 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
   const assigned = new Set(d.reviews.map((r) => r.reviewer.id));
   const info: [string, string][] = [
     ["Reference", app.ref],
+    ...(program
+      ? ([
+          ["Program", app.programTitle],
+          ["Category", app.programCategory],
+          ["Delivery", app.programDelivery],
+          ["Duration", app.programDuration],
+          ["Intended learners", app.programLearners],
+          ["Provider", app.name],
+        ] as [string, string][])
+      : []),
     ["Country", app.country],
-    ["Institution type", app.type],
+    [program ? "Provider type" : "Institution type", app.type],
     ["Year established", app.yearEstablished],
     ["Website", app.website],
     ["Authorization / registration", app.authRef],
@@ -88,13 +107,18 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-col gap-1.5">
               <span className="p-meta">
-                {app.ref} · {app.pathway}
+                {app.ref} · {program ? T.label : app.pathway}
               </span>
-              <h2 className="p-h2">{app.name}</h2>
+              <h2 className="p-h2">{appTitle(app)}</h2>
+              {program && (
+                <span className="text-muted" style={{ font: "500 14px var(--font-sans)" }}>
+                  {app.name} · {app.country}
+                </span>
+              )}
             </div>
-            <Pill tone={appPill(app.stage, app.decision)}>{declined ? "Declined" : `Stage ${app.stage + 1} of 8 · ${STAGES[app.stage]}`}</Pill>
+            <Pill tone={appPill(app)}>{declined ? "Declined" : `Stage ${app.stage + 1} of ${T.stages.length} · ${T.stages[app.stage]}`}</Pill>
           </div>
-          <Stepper steps={STAGES} current={app.stage} />
+          <Stepper steps={T.stages} current={app.stage} />
         </Card>
 
         <div className="flex flex-wrap items-start gap-6">
@@ -102,9 +126,9 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
             <Card className="gap-3.5">
               <span className="p-eyebrow">Current stage</span>
               <p className="m-0" style={{ font: "400 15px/1.6 var(--font-sans)" }}>
-                {STAGE_DESC[app.stage]}
+                {T.desc[app.stage]}
               </p>
-              {!decided && (
+              {!declined && app.stage < T.lastStage && checks.length > 0 && (
                 <div className="flex flex-col rounded-[3px] border border-line">
                   <div className="flex items-center justify-between gap-2.5 border-b border-line bg-mist px-4 py-3">
                     <span className="text-navy" style={{ font: "600 13px var(--font-sans)" }}>
@@ -119,10 +143,10 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                   ))}
                 </div>
               )}
-              {!declined && app.stage < DECISION_STAGE && (
+              {canAdvance && (
                 <div className="flex flex-wrap gap-2.5 pt-1.5">
-                  <AdvanceButton label={`Advance to ${STAGES[app.stage + 1]} →`} done={nDone} total={checks.length} onAdvance={moveStage.bind(null, app.id, 1)} />
-                  {app.stage > 0 && (
+                  <AdvanceButton label={`Advance to ${T.stages[app.stage + 1]} →`} done={nDone} total={checks.length} onAdvance={moveStage.bind(null, app.id, 1)} />
+                  {app.stage > 0 && app.stage < T.decisionStage && (
                     <ActionButton action={moveStage.bind(null, app.id, -1)} className="p-btn-secondary">
                       Return to previous stage
                     </ActionButton>
@@ -135,22 +159,24 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                     Record the decision of the authorized body
                   </span>
                   <span className="text-muted" style={{ font: "400 13px/1.55 var(--font-sans)" }}>
-                    Awards create a draft directory record. It becomes public only after verification and publication.
+                    {program
+                      ? "Awards create a draft program record with a verification number. It becomes public only after verification and publication."
+                      : "Awards create a draft directory record. It becomes public only after verification and publication."}
                     {d.votes.length > 0 && ` Commission: ${counted} vote${counted === 1 ? "" : "s"} recorded (quorum ${COMMISSION_QUORUM}).`}
                   </span>
                   <div className="flex flex-wrap gap-2">
-                    {CLASSIFICATIONS.map((c) => (
-                      <ActionButton key={c} action={decide.bind(null, app.id, c)} confirm={`Record the decision: ${c}?`} className="p-btn" pendingLabel="Recording…">
-                        {DECISION_LABELS[c]}
+                    {T.decisions.map((c) => (
+                      <ActionButton key={c.value} action={decide.bind(null, app.id, c.value)} confirm={`Record the decision: ${c.value}?`} className="p-btn" pendingLabel="Recording…">
+                        {c.label}
                       </ActionButton>
                     ))}
-                    <ActionButton action={decide.bind(null, app.id, "Declined")} confirm={`Record that the authorized body has declined ${app.name}?`} className="p-btn-secondary">
+                    <ActionButton action={decide.bind(null, app.id, "Declined")} confirm={`Record that the authorized body has declined ${appTitle(app)}?`} className="p-btn-secondary">
                       Decline
                     </ActionButton>
                   </div>
                   <div>
                     <ActionButton action={moveStage.bind(null, app.id, -1)} className="p-link">
-                      ← Return to findings &amp; response
+                      ← Return to {T.stages[T.decisionStage - 1].toLowerCase()}
                     </ActionButton>
                   </div>
                 </div>
@@ -161,19 +187,19 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                     {declined
                       ? "This application was declined by the authorized body."
                       : app.decision
-                        ? `Decision recorded: ${app.decision}. Verify and publish the directory record to make it public.`
-                        : "This institution is in the monitoring phase."}
+                        ? `Decision recorded: ${app.decision}.${record ? ` ${program ? `Program record ${record.label}` : "Directory record"} is ${record.status}.` : ""}${record?.status === "Published" ? "" : ` Verify and publish the ${program ? "program" : "directory"} record to make it public.`}`
+                        : `This ${T.party === "provider" ? "program" : "institution"} is in the monitoring phase.`}
                   </span>
                   {!declined && (
-                    <Link href="/portal/directory" className="p-btn-secondary">
-                      Go to directory records
+                    <Link href={recordHref} className="p-btn-secondary">
+                      {record ? (program ? "Open the program record" : "Open the directory record") : "Go to directory records"}
                     </Link>
                   )}
                 </div>
               )}
             </Card>
 
-            {(app.stage >= EVALUATION_STAGE - 1 || d.reviews.length > 0) && (
+            {(app.stage >= T.evaluationStage - 1 || d.reviews.length > 0) && (
               <Card className="gap-3">
                 <div className="flex flex-wrap items-baseline justify-between gap-3">
                   <h3 className="p-h3">Independent review</h3>
@@ -183,7 +209,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                 </div>
                 {d.reviews.map(({ review: r, reviewer }) => {
                   const c = counts(r.ratings);
-                  const state = r.conflictDeclaredAt ? "Conflict declared — reassign" : r.submittedAt ? `Report submitted ${fmtDate(r.submittedAt)}` : r.coiConfirmedAt ? `In progress · ${c.rated} of 12 rated` : "Awaiting conflict-of-interest declaration";
+                  const state = r.conflictDeclaredAt ? "Conflict declared — reassign" : r.submittedAt ? `Report submitted ${fmtDate(r.submittedAt)}` : r.coiConfirmedAt ? `In progress · ${c.rated} of ${r.ratings.length} rated` : "Awaiting conflict-of-interest declaration";
                   return (
                     <div key={r.id} className="flex flex-col gap-1.5 border-t border-cloud py-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -243,10 +269,10 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
             <Card className="gap-4">
               <h3 className="p-h3">Notes and correspondence</h3>
               <NoteComposer
-                placeholder="Write an internal note or a message to the institution…"
+                placeholder={`Write an internal note or a message to the ${T.party}…`}
                 buttons={[
                   { label: "Add internal note", run: addApplicationNote.bind(null, app.id, "staff") },
-                  { label: "Send to institution", primary: true, run: addApplicationNote.bind(null, app.id, "message") },
+                  { label: `Send to ${T.party}`, primary: true, run: addApplicationNote.bind(null, app.id, "message") },
                 ]}
               />
               <div className="flex flex-col">
@@ -338,7 +364,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
 
             <Card className="gap-2.5" style={{ padding: 22 }}>
               <div className="flex items-baseline justify-between gap-2">
-                <h3 className="p-h3">Institution details</h3>
+                <h3 className="p-h3">{program ? "Program and provider" : "Institution details"}</h3>
                 <Link href={`/portal/applications/${app.id}/edit`} className="p-link">
                   Edit
                 </Link>
@@ -355,7 +381,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                   </div>
                 ))}
               </dl>
-              <span className="p-eyebrow">Institutional profile</span>
+              <span className="p-eyebrow">{program ? "Program description and objectives" : "Institutional profile"}</span>
               <p className="m-0 whitespace-pre-wrap" style={{ font: "400 13.5px/1.6 var(--font-sans)" }}>
                 {app.profile || "—"}
               </p>

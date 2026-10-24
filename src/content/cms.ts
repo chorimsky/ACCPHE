@@ -2,10 +2,10 @@
  * Editable institutional content ("update institutional information without coding").
  *
  * Every block has a field schema (drives the portal editor and server validation) and a default: the official text
- * in ./site.ts. Lists whose length the system depends on are fixed: 8 pathway stages, 12 standards, 3 classifications,
+ * in ./site.ts. Lists whose length the system depends on are fixed: 8 pathway stages, 12 standards, 8 program standards, 3 classifications,
  * vision/mission/purpose. Editors can reword them but not add or remove entries.
  */
-import { ACCREDITATION_OBJECTIVES, CLASSES, ELIGIBILITY, ETHICS, EXECUTIVE, FAQS, GOVERNANCE, GOVERNING_BODIES, OBJECTIVES, PILLARS, POLICIES, PROCESS, PROGRAM_ACCREDITATION as PA, STANDARDS, VALUES, VMP } from "./site";
+import { ACCREDITATION_OBJECTIVES, CLASSES, ELIGIBILITY, ETHICS, EXECUTIVE, FAQS, GOVERNANCE, GOVERNING_BODIES, OBJECTIVES, PILLARS, POLICIES, PROCESS, PROGRAM_ACCREDITATION as PA, ACCREDITATION_BENEFITS as AB, STANDARDS, VALUES, VMP } from "./site";
 
 export type Field =
   | { name: string; label: string; type: "text"; max?: number; hint?: string }
@@ -184,6 +184,24 @@ export const BLOCKS: BlockDef[] = [
     default: FAQS,
   },
   {
+    key: "benefits.intro",
+    group: "Accreditation",
+    title: "Benefits of accreditation — heading",
+    description: "Title, tagline and introduction of the benefits section at the top of the Accreditation page.",
+    usedOn: "/accreditation#c-benefits",
+    block: { kind: "object", fields: [t("title", "Title", 200), t("tagline", "Tagline", 200), ta("intro", "Introduction", 3, 800)] },
+    default: { title: AB.title, tagline: AB.tagline, intro: AB.intro },
+  },
+  {
+    key: "benefits",
+    group: "Accreditation",
+    title: "Benefits of accreditation",
+    description: "The academic and professional benefits listed on the Accreditation page.",
+    usedOn: "/accreditation#c-benefits",
+    block: { kind: "list", min: 1, max: 12, item: [t("t", "Benefit", 160), ta("d", "Description", 3, 800)], itemLabel: (v) => String(v.t) },
+    default: AB.items,
+  },
+  {
     key: "programs.page",
     group: "Program Accreditation",
     title: "Independent Program Accreditation — page text",
@@ -210,9 +228,9 @@ export const BLOCKS: BlockDef[] = [
     key: "programs.standards",
     group: "Program Accreditation",
     title: "Program evaluation standards",
-    description: "The principal areas programs are evaluated against.",
+    description: "The eight areas reviewers rate each program against. Reviews depend on this list, so its length is fixed.",
     usedOn: "/accreditation/programs#p-standards",
-    block: { kind: "list", min: 1, max: 16, item: [t("t", "Area", 160), ta("d", "Description", 3, 800)], itemLabel: (v) => String(v.t) },
+    block: { kind: "list", fixed: true, item: [t("t", "Area", 160), ta("d", "Description", 3, 800)], itemLabel: (v) => String(v.t) },
     default: PA.standards,
   },
   {

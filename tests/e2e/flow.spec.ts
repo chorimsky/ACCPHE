@@ -134,8 +134,9 @@ test.describe.serial("accreditation flow", () => {
     await page.goto(appUrl);
     await page.getByRole("button", { name: "Award accreditation" }).click();
     await toast(page, "draft directory record created");
-    await page.getByRole("link", { name: "Go to directory records" }).click();
-    await page.getByRole("link", { name: INSTITUTION, exact: true }).click();
+    // The application links straight to the draft record it created.
+    await page.getByRole("link", { name: "Open the directory record" }).click();
+    await expect(page.getByRole("heading", { name: "Edit directory record" })).toBeVisible();
     // Publishing without verification is refused.
     await page.getByRole("button", { name: "Save and publish" }).click();
     await expect(alertBox(page)).toContainText("Confirm the formal decision has been verified");

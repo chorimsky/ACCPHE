@@ -66,3 +66,16 @@ Every requirement in the client brief (`Website content and ideas.txt`) and the 
 |---|---|
 | Accredited institutions remain subject to periodic review | Overview alerts for published awards whose review date is within 90 days or past |
 | Staff awareness | Email notifications (assignments, status, submissions, quorum) and Monday digest |
+
+## 6. Independent Program Accreditation & Recognition (client addition)
+
+| Requirement (page text) | Implementation | Verified |
+|---|---|---|
+| Dedicated sub-page under Accreditation | `/accreditation/programs`, linked from `/accreditation` (section + contents); CMS-editable (Site content → Program Accreditation) | E2E `public.spec`, `cms.spec` |
+| Step 1 — Application | Public form `/accreditation/programs/apply` (program, provider, contact, documents, disclosure acknowledgement) → `kind = "program"` application, `PRG-YYYY-NNNN`, acknowledgement email, staff alert | E2E `programs.spec` 1 |
+| Step 2 — Documentation and self-evaluation | Program document list (curriculum, outcomes, assessment, instructor qualifications, resources, self-evaluation); uploads by provider and staff; step checklist | E2E `programs.spec` 2 |
+| Step 3 — Independent program review | Reviewer assignment with conflict-of-interest gate; rating against the eight program standards | E2E `programs.spec` 3 |
+| Step 4 — Accreditation decision | Commission votes with program options; staff record *Accredited Program* / *Recognized Program* / *Declined* | E2E `programs.spec` 4–5 |
+| Step 5 — Certification and public verification; "unique program verification number"; "inclusion in the public directory of approved programs" | Draft program record with `ACCPHE-P-YYYY-NNNN`; publication requires verification + effective date + validity end; `/directory/programs` with verification-number lookup; record page with status history | E2E `programs.spec` 5–6 |
+| Step 6 — Ongoing quality assurance | Final step; provider submits reports/substantive changes from the portal; renewal due ≤ 90 days and drafts flagged on the Overview | E2E `programs.spec` 7 |
+| "Accreditation applies exclusively to the approved program" | Stated on the record page, directory, decision email, provider portal, and application disclosure | — |

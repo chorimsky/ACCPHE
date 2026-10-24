@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { InfoNote, ModuleBody, ModuleHeader } from "@/components/portal/ui";
+import { appTitle } from "@/lib/domain";
 import { requireModule } from "@/server/auth";
 import { deliberations, tallyOf } from "@/server/queries/decisions";
 
@@ -25,9 +26,9 @@ export default async function DecisionsPage() {
               <Link key={a.id} href={`/portal/decisions/${a.id}`} className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4 rounded border border-line bg-white px-6 py-[22px] no-underline hover:border-steel">
                 <div className="flex flex-[1_1_300px] flex-col gap-1.5">
                   <span className="text-slate" style={{ font: "600 12px var(--font-sans)" }}>
-                    {a.ref} · {a.pathway}
+                    {a.ref} · {a.kind === "program" ? `Program · ${a.name}` : a.pathway}
                   </span>
-                  <span style={{ font: "600 19px/1.3 var(--font-serif)", color: "var(--color-navy)" }}>{a.name}</span>
+                  <span style={{ font: "600 19px/1.3 var(--font-serif)", color: "var(--color-navy)" }}>{appTitle(a)}</span>
                   <span className="text-muted" style={{ font: "400 13px var(--font-sans)" }}>
                     {tallyOf(vs)}
                     {mine ? ` · You: ${mine.vote}` : ""}

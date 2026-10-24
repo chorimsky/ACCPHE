@@ -5,7 +5,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { applications, complianceSubmissions, COMPLIANCE_TYPES, files, requirements } from "@/db/schema";
 import { attempt, fail, ok, UserError, type ActionResult } from "@/lib/action";
-import { LAST_STAGE } from "@/lib/domain";
+import { trackOf } from "@/lib/domain";
 import { audit } from "@/server/audit";
 import { authorize } from "@/server/auth";
 import { notifyAssigned, notifyModule } from "@/server/notify";
@@ -65,7 +65,7 @@ export async function sendInstitutionMessage(text: string): Promise<ActionResult
 export async function submitCompliance(type: string, text: string): Promise<ActionResult> {
   return attempt(async () => {
     const { user, app, actor } = await own();
-    if (app.stage !== LAST_STAGE || app.decision === "Declined") return fail("Compliance reports are submitted once a decision has been recorded.");
+    if (app.stage <= trackOf(app).decisionStage || app.decision === "Declined") return fail("Compliance reports are submitted once a decision has been recorded.");
     if (!COMPLIANCE_TYPES.includes(type as never)) return fail("Choose the type of submission.");
     const t = text.trim();
     if (!t) return fail("Write a summary first.");

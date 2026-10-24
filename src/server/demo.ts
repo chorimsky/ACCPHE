@@ -3,7 +3,7 @@ import { ne, sql } from "drizzle-orm";
 import { db } from "@/db";
 import * as t from "@/db/schema";
 import { DEFAULT_NOTICE, SEED_ARTICLES } from "@/content/site";
-import { REQUIREMENTS } from "@/lib/domain";
+import { PROGRAM_REQUIREMENTS, REQUIREMENTS } from "@/lib/domain";
 import { DEMO_PASSWORD } from "@/server/demo-credentials";
 
 /**
@@ -35,7 +35,7 @@ const isoAgo = (n: number) => ago(n).toISOString().slice(0, 10);
 export async function seedDemo(opts: { keepUserId?: string } = {}) {
   const year = new Date().getUTCFullYear();
   // Children first (foreign keys).
-  for (const table of [t.votes, t.reviews, t.complianceSubmissions, t.files, t.applicationNotes, t.requirements, t.records, t.caseNotes, t.cases, t.messages, t.articles, t.auditLog, t.counters, t.emailOutbox, t.rateLimits, t.authTokens]) {
+  for (const table of [t.votes, t.reviews, t.complianceSubmissions, t.files, t.applicationNotes, t.requirements, t.programRecordEvents, t.programRecords, t.records, t.caseNotes, t.cases, t.messages, t.articles, t.auditLog, t.counters, t.emailOutbox, t.rateLimits, t.authTokens]) {
     await db.delete(table);
   }
   if (opts.keepUserId) {
@@ -110,7 +110,50 @@ export async function seedDemo(opts: { keepUserId?: string } = {}) {
     );
     await db.insert(t.applicationNotes).values({ applicationId: row.id, kind: "system", who: "Website", text: "Institutional inquiry received via the public website.", createdAt: ago(a.days) });
   }
+  /* Program applications (Independent Program Accreditation & Recognition) */
+  const programs = [
+    { k: "p1", title: "Sample Certificate in Christian Leadership (demo)", provider: "Sample Leadership Academy (demo)", country: "Kenya", category: "Christian ministry and theological certificate programs", delivery: "Blended", stage: 0, officer: null, days: 2 },
+    { k: "p2", title: "Sample Diploma in Digital Transformation (demo)", provider: "Sample Training Institute (demo)", country: "South Africa", category: "Digital transformation, artificial intelligence, and technology training", delivery: "Online", stage: 2, officer: "officer", days: 45 },
+    { k: "p3", title: "Sample CPD Course in Ministry Practice (demo)", provider: "Sample Professional Academy (demo)", country: "Ghana", category: "Continuing Professional Development (CPD) courses", delivery: "In person", stage: 3, officer: "officer", days: 90 },
+  ];
+  for (const [i, p] of programs.entries()) {
+    const [row] = await db
+      .insert(t.applications)
+      .values({
+        kind: "program",
+        ref: `PRG-${year}-${String(11 + i).padStart(4, "0")}`,
+        programTitle: p.title,
+        programCategory: p.category,
+        programDelivery: p.delivery,
+        programDuration: "120 learning hours over six months",
+        programLearners: "Working professionals and ministry leaders; entry requires a first degree or equivalent experience.",
+        name: p.provider,
+        country: p.country,
+        website: "https://example.org",
+        type: "Training organization",
+        repName: "Sample Program Director",
+        repPosition: "Program Director",
+        repEmail: "programs@example.org",
+        repPhone: "+00 000 000 000",
+        pathway: "Accreditation",
+        profile: "Demonstration program. Real applications from the public program accreditation form appear here with the details provided by the education provider.",
+        stage: p.stage,
+        officerId: p.officer ? (uid[p.officer] ?? null) : null,
+        checks: {},
+        source: "website",
+        submittedAt: ago(p.days),
+        updatedAt: ago(Math.max(1, Math.floor(p.days / 5))),
+      })
+      .returning({ id: t.applications.id });
+    aid[p.k] = row.id;
+    await db.insert(t.requirements).values(
+      PROGRAM_REQUIREMENTS.map((name, position) => ({ applicationId: row.id, name, position, status: p.stage >= 2 ? ("Received" as const) : ("Outstanding" as const) })),
+    );
+    await db.insert(t.applicationNotes).values({ applicationId: row.id, kind: "system", who: "Website", text: "Program accreditation application received via the public website.", createdAt: ago(p.days) });
+  }
+
   await db.insert(t.counters).values([
+    { name: `prg:${year}`, value: 10 + programs.length },
     { name: `acc:${year}`, value: 130 + apps.length },
     { name: `cmp:${year}`, value: 7 },
     { name: `apl:${year}`, value: 2 },
@@ -155,9 +198,47 @@ export async function seedDemo(opts: { keepUserId?: string } = {}) {
     });
   }
   if (uid.c1) await db.insert(t.votes).values({ applicationId: aid.a3, voterId: uid.c1, vote: "Award accreditation", note: "Concur with the review team, including the reporting condition.", createdAt: ago(2) });
+  if (uid.reviewer) {
+    await db.insert(t.reviews).values({
+      applicationId: aid.p3,
+      reviewerId: uid.reviewer,
+      assignedById: uid.officer ?? null,
+      coiConfirmedAt: ago(40),
+      submittedAt: ago(12),
+      ratings: ["met", "met", "met", "met", "partial", "met", "met", "met"],
+      comments: ["", "Curriculum is coherent and aligned with the stated outcomes.", "", "", "Completion requirements are clear; moderation of assessments is informal.", "", "", ""],
+      summary: "The program meets the program standards. Recommend program accreditation, with advice to formalize the moderation of assessments.",
+      createdAt: ago(50),
+    });
+    await db.insert(t.reviews).values({
+      applicationId: aid.p2,
+      reviewerId: uid.reviewer,
+      assignedById: uid.officer ?? null,
+      coiConfirmedAt: ago(6),
+      ratings: ["met", "partial", "", "", "", "", "", ""],
+      comments: ["", "Several modules lack defined learning outcomes.", "", "", "", "", "", ""],
+      createdAt: ago(8),
+    });
+  }
 
   /* Directory */
   await db.insert(t.records).values({ slug: "sample-institution-demo-record-kenya", name: "Sample Institution (demo record)", country: "Kenya", cls: "Associate Member", effective: isoAgo(5), status: "Draft", verified: false, updatedAt: ago(5) });
+  await db.insert(t.programRecords).values({
+    slug: "sample-short-course-demo-record",
+    verification: `ACCPHE-P-${year}-0001`,
+    title: "Sample Short Course (demo record)",
+    provider: "Sample Education Provider (demo)",
+    country: "Kenya",
+    category: "Short courses, microcredentials, and specialized learning pathways",
+    award: "Recognized Program",
+    effective: isoAgo(5),
+    review: `${year + 3}${isoAgo(5).slice(4)}`,
+    scope: "Program recognition",
+    status: "Draft",
+    verified: false,
+    updatedAt: ago(5),
+  });
+  await db.insert(t.counters).values({ name: `prgv:${year}`, value: 1 });
 
   /* Articles */
   const articleAge = [6, 8, 12, 1];

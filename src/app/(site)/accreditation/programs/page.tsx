@@ -19,6 +19,7 @@ const TOC: [string, string][] = [
   ["p-disclosure", "Disclosure"],
 ];
 
+const APPLY = "/accreditation/programs/apply";
 const ENQUIRE = "/contact?topic=programs";
 
 export default async function ProgramAccreditationPage() {
@@ -38,19 +39,22 @@ export default async function ProgramAccreditationPage() {
       <JsonLd data={pageGraph("/accreditation/programs", title, desc, crumbs, [howTo])} />
       <PageHero crumbs={[{ label: "Accreditation", href: "/accreditation" }, { label: "Independent Program Accreditation" }]} title="Independent Program Accreditation & Recognition" lede={P.tagline}>
         <div className="mt-2.5 flex flex-wrap gap-3">
-          <Link href={ENQUIRE} className="btn btn-light">
-            Enquire About Program Review
+          <Link href={APPLY} className="btn btn-light">
+            Apply for Program Accreditation
           </Link>
-          <a href="#p-standards" className="btn btn-ghost">
-            View the Program Standards
-          </a>
+          <Link href="/directory/programs" className="btn btn-ghost">
+            Verify an Approved Program
+          </Link>
         </div>
       </PageHero>
 
       <div className="wrap flex items-start" style={{ paddingTop: "clamp(56px,7vw,88px)", paddingBottom: "clamp(72px,9vw,112px)", gap: "clamp(40px,6vw,88px)" }}>
         <Toc items={TOC}>
           <div className="mt-8">
-            <AsideBox title="Have a program in mind?" text="Tell the Secretariat about the program you would like reviewed." href={ENQUIRE} cta="Enquire" />
+            <AsideBox title="Ready to apply?" text="Submit one program for independent review." href={APPLY} cta="Apply" />
+            <p className="m-0 mt-4" style={{ font: "400 13.5px/1.55 var(--font-sans)" }}>
+              Questions first? <Link href={ENQUIRE}>Contact the Secretariat</Link>.
+            </p>
           </div>
         </Toc>
 
@@ -183,6 +187,12 @@ export default async function ProgramAccreditationPage() {
             <p className="m-0 border border-line bg-mist px-6 py-[18px] text-navy" style={{ font: "600 14.5px/1.6 var(--font-sans)" }}>
               {P.receiveNote}
             </p>
+            <div className="flex flex-wrap items-center justify-between gap-4 border border-line px-6 py-5">
+              <span style={{ font: "400 15px/1.6 var(--font-sans)" }}>Approved programs and their verification numbers are listed in the public directory.</span>
+              <Link href="/directory/programs" className="link-arrow">
+                Directory of approved programs
+              </Link>
+            </div>
           </section>
 
           <section id="p-disclosure" aria-labelledby="p-disclosure-h" className="flex flex-col gap-4 border-l-4 border-navy bg-mist" style={{ padding: "clamp(24px,4vw,36px)" }}>
@@ -203,12 +213,17 @@ export default async function ProgramAccreditationPage() {
                 Submit a program for independent review
               </h2>
               <p className="m-0 text-fog" style={{ font: "400 15.5px/1.6 var(--font-sans)" }}>
-                Describe the program, its learners and its delivery model. The Secretariat will advise on eligibility and the next steps.
+                Describe the program, its learners and its delivery model. The Secretariat will confirm eligibility and the documents required.
               </p>
             </div>
-            <Link href={ENQUIRE} className="btn btn-light">
-              Enquire About Program Review
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link href={APPLY} className="btn btn-light">
+                Apply for Program Accreditation
+              </Link>
+              <Link href={ENQUIRE} className="btn btn-ghost">
+                Ask a question
+              </Link>
+            </div>
           </section>
         </div>
       </div>

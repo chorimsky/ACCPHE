@@ -2,13 +2,22 @@ import { expect, test } from "@playwright/test";
 
 test.describe("public website", () => {
   test("every page renders with one h1, canonical URL and structured data", async ({ page }) => {
-    for (const path of ["/", "/about", "/accreditation", "/accreditation/programs", "/standards", "/governance", "/directory", "/news", "/apply", "/contact", "/privacy", "/accessibility", "/terms"]) {
+    for (const path of ["/", "/about", "/accreditation", "/accreditation/programs", "/accreditation/programs/apply", "/directory/programs", "/standards", "/governance", "/directory", "/news", "/apply", "/contact", "/privacy", "/accessibility", "/terms"]) {
       const res = await page.goto(path);
       expect(res?.status(), path).toBe(200);
       await expect(page.locator("h1"), path).toHaveCount(1);
       await expect(page.locator('link[rel="canonical"]'), path).toHaveAttribute("href", path === "/" ? /^https?:\/\/[^/]+\/?$/ : new RegExp(`${path}$`));
       expect(await page.locator('script[type="application/ld+json"]').count(), path).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  test("the Accreditation page opens with the benefits of accreditation", async ({ page }) => {
+    await page.goto("/accreditation");
+    const benefits = page.locator("#c-benefits");
+    await expect(benefits.getByRole("heading", { level: 2 })).toHaveText("The Academic and Professional Benefits of ACCPHE Accreditation");
+    await expect(benefits.getByText("Elevate Your Institution. Strengthen Your Credibility. Advance Your Global Influence.")).toBeVisible();
+    await expect(benefits.getByRole("listitem")).toHaveCount(7);
+    await expect(benefits.getByRole("heading", { name: "Institutional Growth and Competitive Advantage" })).toBeVisible();
   });
 
   test("program accreditation has its own page under Accreditation", async ({ page }) => {
@@ -20,7 +29,7 @@ test.describe("public website", () => {
     await expect(page.locator("#p-standards li")).toHaveCount(8);
     await expect(page.locator("#p-process li")).toHaveCount(6);
     await expect(page.getByText("does not, by itself, constitute government approval")).toBeVisible();
-    await page.getByRole("link", { name: "Enquire About Program Review" }).first().click();
+    await page.getByRole("link", { name: "Ask a question" }).click();
     await expect(page.locator('select[name="route"]')).toHaveValue("Program accreditation");
   });
 

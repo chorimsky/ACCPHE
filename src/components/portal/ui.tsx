@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { MODULES, type ModuleKey } from "@/lib/domain";
+import type { AppKind } from "@/db/schema";
+import { MODULES, trackOf, type ModuleKey } from "@/lib/domain";
 
 /** White header bar at the top of each module: title, subtitle and module actions. */
 export function ModuleHeader({ mod, title, sub, children }: { mod?: ModuleKey; title?: string; sub?: string; children?: React.ReactNode }) {
@@ -101,6 +102,26 @@ export function Tabs({ items }: { items: { href: string; label: string; n?: numb
   );
 }
 
+/** Segmented switch between record types (e.g. Institutions | Programs). */
+export function KindSwitch({ label, items }: { label: string; items: { href: string; label: string; n?: number; on: boolean }[] }) {
+  return (
+    <nav aria-label={label} className="inline-flex self-start rounded-[3px] border border-line bg-white p-1">
+      {items.map((t) => (
+        <Link
+          key={t.href}
+          href={t.href}
+          aria-current={t.on ? "page" : undefined}
+          className={`rounded-[2px] px-4 py-2 no-underline ${t.on ? "bg-navy text-white" : "text-navy hover:bg-mist"}`}
+          style={{ font: "600 13.5px var(--font-sans)" }}
+        >
+          {t.label}
+          {t.n !== undefined && <span className={`ml-2 ${t.on ? "text-fog" : "text-muted"}`}>{t.n}</span>}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
 export function Bars({ rows }: { rows: [string, number][] }) {
   const max = Math.max(1, ...rows.map((r) => r[1]));
   return (
@@ -123,7 +144,11 @@ export function Bars({ rows }: { rows: [string, number][] }) {
   );
 }
 
-export const appPill = (stage: number, decision: string): PillTone => (decision === "Declined" ? "bad" : stage === 7 ? "navy" : stage === 6 ? "warn" : "soft");
+/** Navy once decided (monitoring), amber at the decision stage. */
+export const appPill = (a: { kind: AppKind; stage: number; decision: string }): PillTone => {
+  const t = trackOf(a);
+  return a.decision === "Declined" ? "bad" : a.stage > t.decisionStage ? "navy" : a.stage === t.decisionStage ? "warn" : "soft";
+};
 export const recPill = (s: string): PillTone => (s === "Published" ? "navy" : s === "Draft" ? "outline" : s === "Suspended" ? "warn" : "bad");
 export const docPill = (s: string): PillTone => (s === "Received" ? "good" : s === "Submitted" ? "warn" : "outline");
 export const ratePill = (k: string): PillTone => (k === "met" ? "good" : k === "partial" ? "warn" : k === "not" ? "bad" : "outline");

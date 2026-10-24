@@ -3,19 +3,20 @@ import { AsideBox, Eyebrow, PageHero, StatusMatrix } from "@/components/site/blo
 import { FaqList, Toc } from "@/components/site/interactive";
 import { JsonLd } from "@/components/seo/json-ld";
 import { PAGE_TOCS, SEO, type TextItem } from "@/content/site";
-import { getBlock, getClasses, getFaqs, getProcess } from "@/server/content";
+import { getBenefits, getBlock, getClasses, getFaqs, getProcess } from "@/server/content";
 import { faqGraph, pageGraph, seoFor } from "@/lib/seo";
 
 export const metadata = seoFor("accreditation", "/accreditation");
 
 export default async function AccreditationPage() {
   const [title, desc] = SEO.accreditation;
-  const [ACCREDITATION_OBJECTIVES, ELIGIBILITY, PROCESS, CLASSES, FAQS] = await Promise.all([
+  const [ACCREDITATION_OBJECTIVES, ELIGIBILITY, PROCESS, CLASSES, FAQS, BENEFITS] = await Promise.all([
     getBlock<string[]>("accreditation.objectives"),
     getBlock<TextItem[]>("eligibility"),
     getProcess(),
     getClasses(),
     getFaqs(),
+    getBenefits(),
   ]);
   const howTo = {
     "@type": "HowTo",
@@ -47,6 +48,36 @@ export default async function AccreditationPage() {
           </div>
         </Toc>
         <div className="flex min-w-0 max-w-[860px] flex-1 flex-col" style={{ gap: "clamp(64px,8vw,96px)" }}>
+          <section id="c-benefits" aria-labelledby="c-benefits-h" className="flex flex-col gap-6">
+            <div className="flex flex-col gap-[18px]">
+              <Eyebrow>Why ACCPHE Accreditation</Eyebrow>
+              <h2 id="c-benefits-h" className="h2-sm">
+                {BENEFITS.title}
+              </h2>
+              <p className="m-0 text-navy" style={{ font: "600 clamp(18px,1.8vw,21px)/1.4 var(--font-serif)", textWrap: "balance" }}>
+                {BENEFITS.tagline}
+              </p>
+              <p className="body-lg">{BENEFITS.intro}</p>
+            </div>
+            <ol className="m-0 flex list-none flex-col border-b border-line p-0">
+              {BENEFITS.items.map((b, i) => (
+                <li key={b.t} className="grid grid-cols-[48px_1fr] gap-4 border-t border-line py-[22px] sm:grid-cols-[64px_1fr]">
+                  <span aria-hidden="true" className="text-steel" style={{ font: "500 clamp(26px,2.6vw,32px)/1 var(--font-serif)" }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div className="flex flex-col gap-1.5">
+                    <h3 className="m-0 text-navy" style={{ font: "600 19px/1.3 var(--font-serif)" }}>
+                      {b.t}
+                    </h3>
+                    <p className="m-0 max-w-[680px]" style={{ font: "400 15.5px/1.65 var(--font-sans)", textWrap: "pretty" }}>
+                      {b.d}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+
           <section id="c-objectives" aria-labelledby="c-objectives-h" className="flex flex-col gap-[22px]">
             <Eyebrow>Objectives of Accreditation</Eyebrow>
             <h2 id="c-objectives-h" className="h2-sm">

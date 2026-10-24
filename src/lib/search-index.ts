@@ -8,6 +8,8 @@ const PAGES: [string, string, string][] = [
   ["standards", "Standards & Policies", "/standards"],
   ["governance", "Governance", "/governance"],
   ["directory", "Institutional Directory", "/directory"],
+  ["programDirectory", "Directory of Approved Programs", "/directory/programs"],
+  ["programApply", "Apply for Program Accreditation", "/accreditation/programs/apply"],
   ["news", "News & Insights", "/news"],
   ["apply", "Apply", "/apply"],
   ["contact", "Contact", "/contact"],
@@ -24,8 +26,9 @@ export function buildSearchIndex(d: {
   governance: { id: string; t: string; intro: string[] }[];
   values: { t: string; d: string }[];
   institutions: { slug: string; name: string; country: string; cls: string; status: string }[];
+  programs?: { slug: string; title: string; provider: string; award: string; verification: string; status: string }[];
 }): SearchItem[] {
-  const { news, standards: STANDARDS, faqs: FAQS, governance: GOVERNANCE, values: VALUES, institutions } = d;
+  const { news, standards: STANDARDS, faqs: FAQS, governance: GOVERNANCE, values: VALUES, institutions, programs = [] } = d;
   return [
     ...PAGES.map(([k, t, href]) => ({ kind: "Page", t, d: SEO[k]?.[1] ?? "", href })),
     ...STANDARDS.map((s, i) => ({ kind: `Standard ${i + 1}`, t: s.t, d: s.s, href: `/standards#standard-${i + 1}` })),
@@ -35,5 +38,6 @@ export function buildSearchIndex(d: {
     { kind: "Governance", t: "Executive Secretariat", d: "Administration and implementation of policy.", href: "/governance#g-exec" },
     ...VALUES.map((v) => ({ kind: "Value", t: v.t, d: v.d, href: "/about#a-values" })),
     ...institutions.map((r) => ({ kind: "Institution", t: r.name, d: `${r.country} · ${r.cls}${r.status === "Published" ? "" : ` · ${r.status}`}`, href: `/directory/${r.slug}` })),
+    ...programs.map((r) => ({ kind: "Program", t: r.title, d: `${r.provider} · ${r.award} · ${r.verification}${r.status === "Published" ? "" : ` · ${r.status}`}`, href: `/directory/programs/${r.slug}` })),
   ];
 }

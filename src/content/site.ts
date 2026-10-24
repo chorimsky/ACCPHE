@@ -3,6 +3,8 @@
  * (ACCPHE Website v2 + accphe-content.js). Editable institutional details (banner, status notice, contact details),
  * articles and directory records live in the database and are managed in the portal.
  */
+import { PROGRAM_CATEGORIES } from "@/lib/domain";
+
 
 export type TextItem = { t: string; d: string };
 
@@ -637,6 +639,10 @@ export const PAGE_TOCS: Record<"about" | "accreditation", [string, string][]> = 
   ],
   "accreditation": [
     [
+      "c-benefits",
+      "Benefits"
+    ],
+    [
       "c-objectives",
       "Objectives"
     ],
@@ -676,6 +682,14 @@ export const SEO: Record<string, [string, string]> = {
   "about": [
     "About the Council — Mission, Vision, Values | ACCPHE",
     "ACCPHE is an independent, internationally oriented quality assurance organization advancing academic excellence, institutional integrity, and responsible governance in Christian and private higher education."
+  ],
+  "programDirectory": [
+    "Directory of Approved Programs & Verification | ACCPHE",
+    "Verify ACCPHE program accreditation or recognition: approved program title, provider, scope, validity period and unique verification number for every approved certificate, diploma and training program."
+  ],
+  "programApply": [
+    "Apply for Program Accreditation | ACCPHE",
+    "Submit a certificate, diploma, CPD, executive, ministry or professional training program for ACCPHE Independent Program Accreditation & Recognition."
   ],
   "programs": [
     "Independent Program Accreditation & Recognition | ACCPHE",
@@ -1020,18 +1034,7 @@ export const PROGRAM_ACCREDITATION = {
     "This enables eligible education providers to submit individual certificate programs, professional development courses, and specialized training initiatives for independent evaluation without necessarily pursuing full institutional accreditation.",
     "Programs that satisfy the applicable ACCPHE standards may receive formal program-level accreditation or recognition within the scope of the Council’s independent quality assurance framework.",
   ],
-  eligible: [
-    "Professional certificate and diploma programs",
-    "Executive education and leadership development programs",
-    "Continuing Professional Development (CPD) courses",
-    "Business, entrepreneurship, and management training",
-    "Christian ministry and theological certificate programs",
-    "Digital transformation, artificial intelligence, and technology training",
-    "Vocational and workforce development programs",
-    "Professional coaching, consulting, and facilitation programs",
-    "Short courses, microcredentials, and specialized learning pathways",
-    "Innovative interdisciplinary and industry-focused educational programs",
-  ],
+  eligible: PROGRAM_CATEGORIES,
   eligibleNote: "Eligibility remains subject to ACCPHE’s published standards, applicable regulations, and the nature of the qualification being offered.",
   independence: [
     "ACCPHE recognizes that educational institutions and independent training providers have distinct missions, educational philosophies, instructional approaches, and professional objectives. Our program accreditation framework is intended to preserve this diversity.",
@@ -1069,5 +1072,21 @@ export const PROGRAM_ACCREDITATION = {
   disclosure: [
     "ACCPHE program accreditation or recognition represents an independent evaluation against ACCPHE’s own published quality assurance standards. It does not, by itself, constitute government approval, authorization to operate an educational institution, recognition by the United States Department of Education or the Council for Higher Education Accreditation, professional licensure approval, or guaranteed acceptance of academic credit by other institutions.",
     "Providers remain responsible for securing all licenses, approvals, and authorizations required in the jurisdictions where they operate.",
+  ],
+};
+
+/** The Academic and Professional Benefits of ACCPHE Accreditation (/accreditation#c-benefits). */
+export const ACCREDITATION_BENEFITS = {
+  title: "The Academic and Professional Benefits of ACCPHE Accreditation",
+  tagline: "Elevate Your Institution. Strengthen Your Credibility. Advance Your Global Influence.",
+  intro: "Discover how ACCPHE accreditation can strengthen academic quality, enhance institutional credibility, and position your institution for meaningful educational partnerships and long-term growth.",
+  items: [
+    { t: "Enhanced Local and Global Credibility", d: "Strengthen the reputation and credibility of your institution, academic programs, and certificates through independent quality assurance." },
+    { t: "Greater Marketplace Recognition", d: "Enhance the professional credibility and marketplace relevance of your programs and certificates, strengthening confidence among employers and industry stakeholders." },
+    { t: "International Visibility and Institutional Prestige", d: "Position your institution for greater international exposure, professional recognition, and opportunities for global engagement." },
+    { t: "Academic Excellence and Quality Assurance", d: "Demonstrate your institution’s commitment to rigorous academic standards, continuous improvement, and educational excellence." },
+    { t: "Global Partnerships and Academic Collaboration", d: "Strengthen your institution’s position to pursue strategic partnerships, academic collaborations, and international educational networks." },
+    { t: "Increased Student and Stakeholder Confidence", d: "Build greater trust among prospective students, parents, employers, and institutional partners through demonstrated commitment to educational quality and integrity." },
+    { t: "Institutional Growth and Competitive Advantage", d: "Differentiate your institution in an increasingly competitive education sector while strengthening its foundation for sustainable growth, innovation, and long-term success." },
   ],
 };

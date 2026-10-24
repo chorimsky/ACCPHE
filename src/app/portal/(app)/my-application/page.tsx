@@ -6,7 +6,7 @@ import { NoteComposer } from "@/components/portal/actions";
 import { ComplianceForm } from "@/components/portal/compliance-form";
 import { docPill, ModuleBody, ModuleHeader, Pill } from "@/components/portal/ui";
 import { UploadButton } from "@/components/portal/widgets";
-import { INSTITUTION_ACTIONS, LAST_STAGE, STAGE_DESC, STAGES } from "@/lib/domain";
+import { appTitle, trackOf } from "@/lib/domain";
 import { fmtDate } from "@/lib/format";
 import { sendInstitutionMessage, uploadDocument } from "@/server/actions/institution";
 import { requireModule } from "@/server/auth";
@@ -27,7 +27,8 @@ export default async function MyApplicationPage() {
               Your account is not yet linked to an application.
             </p>
             <p className="m-0 mt-2 text-muted" style={{ font: "400 14px/1.6 var(--font-sans)" }}>
-              The Secretariat links representative accounts to their institution’s inquiry after verification. If you have not yet submitted an inquiry, use the <Link href="/apply">institutional inquiry form</Link>.
+              The Secretariat links representative accounts to their application after verification. If you have not yet applied, use the <Link href="/apply">institutional inquiry form</Link> or the{" "}
+              <Link href="/accreditation/programs/apply">program accreditation application</Link>.
             </p>
           </div>
         </ModuleBody>
@@ -41,9 +42,12 @@ export default async function MyApplicationPage() {
     db.select().from(complianceSubmissions).where(eq(complianceSubmissions.applicationId, app.id)).orderBy(desc(complianceSubmissions.createdAt)),
     app.officerId ? db.select({ name: users.name, position: users.position }).from(users).where(eq(users.id, app.officerId)) : Promise.resolve([]),
   ]);
+  const T = trackOf(app);
+  const program = app.kind === "program";
   const declined = app.decision === "Declined";
-  const accredited = app.stage === LAST_STAGE && !declined;
-  const progress = declined ? 100 : (app.stage / LAST_STAGE) * 100;
+  const decided = app.stage > T.decisionStage && !declined;
+  const accredited = app.stage === T.lastStage && !declined;
+  const progress = declined ? 100 : (app.stage / T.lastStage) * 100;
   return (
     <>
       <ModuleHeader mod="myapp" />
@@ -52,17 +56,22 @@ export default async function MyApplicationPage() {
           <div className="relative flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-col gap-1.5">
               <span className="text-haze" style={{ font: "600 12.5px var(--font-sans)" }}>
-                {app.ref} · {app.pathway} · Submitted {fmtDate(app.submittedAt)}
+                {app.ref} · {program ? T.label : app.pathway} · Submitted {fmtDate(app.submittedAt)}
               </span>
               <h2 className="m-0" style={{ font: "500 clamp(24px,2.6vw,30px)/1.15 var(--font-serif)" }}>
-                {app.name}
+                {appTitle(app)}
               </h2>
+              {program && (
+                <span className="text-fog" style={{ font: "500 14px var(--font-sans)" }}>
+                  {app.name}
+                </span>
+              )}
             </div>
             <div className="flex flex-col items-end gap-1">
               <span className="text-haze" style={{ font: "600 12px var(--font-sans)" }}>
-                {declined ? "Declined" : `Stage ${app.stage + 1} of 8`}
+                {declined ? "Declined" : `Stage ${app.stage + 1} of ${T.stages.length}`}
               </span>
-              <span style={{ font: "500 18px var(--font-serif)" }}>{declined ? "Application declined" : STAGES[app.stage]}</span>
+              <span style={{ font: "500 18px var(--font-serif)" }}>{declined ? "Application declined" : T.stages[app.stage]}</span>
             </div>
           </div>
           <div className="h-1 overflow-hidden rounded-sm bg-rule" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-label="Progress through the pathway">
@@ -73,7 +82,7 @@ export default async function MyApplicationPage() {
               Next step
             </span>
             <span style={{ font: "500 14.5px/1.55 var(--font-sans)" }}>
-              {declined ? "The authorized body has declined this application. Contact the Secretariat for information on the appeals procedure." : INSTITUTION_ACTIONS[app.stage]}
+              {declined ? "The authorized body has declined this application. Contact the Secretariat for information on the appeals procedure." : T.actions[app.stage]}
             </span>
           </div>
           <span className="text-haze" style={{ font: "400 12.5px var(--font-sans)" }}>
@@ -85,8 +94,8 @@ export default async function MyApplicationPage() {
           <section className="flex min-w-0 flex-[1_1_340px] flex-col gap-1 rounded border border-line bg-white p-6">
             <h3 className="p-h3">Evaluation pathway</h3>
             <ol className="m-0 mt-3.5 flex list-none flex-col p-0">
-              {STAGES.map((s, i) => {
-                const done = i < app.stage || (accredited && i === LAST_STAGE);
+              {T.stages.map((s, i) => {
+                const done = i < app.stage || (accredited && i === T.lastStage);
                 const current = !done && i === app.stage && !declined;
                 return (
                   <li key={s} className="grid grid-cols-[30px_1fr] gap-3.5" aria-current={current ? "step" : undefined}>
@@ -104,11 +113,11 @@ export default async function MyApplicationPage() {
                           {i + 1}
                         </span>
                       )}
-                      {i < STAGES.length - 1 && <span aria-hidden="true" className="min-h-3.5 w-px flex-1 bg-line" />}
+                      {i < T.stages.length - 1 && <span aria-hidden="true" className="min-h-3.5 w-px flex-1 bg-line" />}
                     </div>
                     <div className="flex flex-col gap-1 pb-[18px] pt-[3px]">
                       <span style={{ font: `${current ? 700 : done ? 500 : 400} 14px var(--font-sans)`, color: current || done ? "var(--color-navy)" : "var(--color-placeholder)" }}>{s}</span>
-                      {current && <span style={{ font: "400 13px/1.55 var(--font-sans)" }}>{STAGE_DESC[i]}</span>}
+                      {current && <span style={{ font: "400 13px/1.55 var(--font-sans)" }}>{T.desc[i]}</span>}
                     </div>
                   </li>
                 );
@@ -152,12 +161,14 @@ export default async function MyApplicationPage() {
               </span>
             </section>
 
-            {accredited && (
+            {decided && (
               <section className="flex flex-col gap-3.5 rounded border border-line bg-white p-6">
                 <div className="flex flex-col gap-1">
                   <h3 className="p-h3">Maintaining accreditation</h3>
                   <span className="text-muted" style={{ font: "400 13.5px/1.55 var(--font-sans)" }}>
-                    Submit required reports and disclose material institutional changes. Submissions are recorded and reviewed by the Secretariat.
+                    {program
+                      ? "Submit periodic reports and disclose substantive changes to the approved program. Submissions are recorded and reviewed by the Secretariat."
+                      : "Submit required reports and disclose material institutional changes. Submissions are recorded and reviewed by the Secretariat."}
                   </span>
                 </div>
                 <ComplianceForm />
@@ -179,7 +190,7 @@ export default async function MyApplicationPage() {
                   n.kind === "institution" ? (
                     <div key={n.id} className="flex max-w-[85%] flex-col gap-1 self-end rounded bg-navy px-3.5 py-3 text-mist">
                       <span className="text-haze" style={{ font: "600 11.5px var(--font-sans)" }}>
-                        Your institution · {fmtDate(n.createdAt)}
+                        {program ? "You" : "Your institution"} · {fmtDate(n.createdAt)}
                       </span>
                       <span className="whitespace-pre-wrap" style={{ font: "400 14px/1.55 var(--font-sans)" }}>
                         {n.text}
@@ -200,7 +211,9 @@ export default async function MyApplicationPage() {
               <NoteComposer placeholder="Write to the Secretariat…" buttons={[{ label: "Send message", primary: true, run: sendInstitutionMessage }]} />
             </section>
             <p className="m-0 text-muted" style={{ font: "400 12.5px/1.6 var(--font-sans)" }}>
-              Participation in the evaluation pathway does not constitute accreditation. Institutions must represent their status accurately at every stage.
+              {program
+                ? "Participation in the review does not constitute accreditation. Program accreditation applies only to the approved program, not to the provider or its other offerings."
+                : "Participation in the evaluation pathway does not constitute accreditation. Institutions must represent their status accurately at every stage."}
             </p>
           </div>
         </div>

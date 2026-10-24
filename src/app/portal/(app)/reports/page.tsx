@@ -1,9 +1,9 @@
 import { desc, like, or, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { applications, auditLog, cases, CLASSIFICATIONS, records } from "@/db/schema";
+import { applications, auditLog, cases, CLASSIFICATIONS, PROGRAM_AWARDS, programRecords, records } from "@/db/schema";
 import { ListSearch } from "@/components/portal/list-search";
 import { Bars, Card, ModuleBody, ModuleHeader } from "@/components/portal/ui";
-import { CASE_CLOSED, CASE_STAGES, LAST_STAGE } from "@/lib/domain";
+import { CASE_CLOSED, CASE_STAGES, isOpen } from "@/lib/domain";
 import { daysSince, fmtDateTime } from "@/lib/format";
 import { requireModule } from "@/server/auth";
 
@@ -22,13 +22,13 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const page = Math.max(0, Number(sp.page ?? 0) || 0);
-  const [apps, recs, cs] = await Promise.all([db.select().from(applications), db.select().from(records), db.select().from(cases)]);
+  const [apps, recs, progs, cs] = await Promise.all([db.select().from(applications), db.select().from(records), db.select().from(programRecords), db.select().from(cases)]);
   const where = q ? or(like(auditLog.summary, `%${q}%`), like(auditLog.who, `%${q}%`)) : undefined;
   const [audit, [{ n: total }]] = await Promise.all([
     db.select().from(auditLog).where(where).orderBy(desc(auditLog.createdAt)).limit(PAGE).offset(page * PAGE),
     db.select({ n: sql<number>`count(*)` }).from(auditLog).where(where),
   ]);
-  const open = apps.filter((a) => a.stage < LAST_STAGE && a.decision !== "Declined");
+  const open = apps.filter(isOpen);
   const avgDays = open.length ? Math.round(open.reduce((t, a) => t + daysSince(a.submittedAt), 0) / open.length) : 0;
   const kpis = [
     { n: apps.length, t: "Applications on record" },
@@ -36,6 +36,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     { n: `${avgDays} d`, t: "Average time in pathway (open)" },
     { n: apps.filter((a) => a.decision && a.decision !== "Declined").length, t: "Awards recorded" },
     { n: recs.filter((r) => r.status === "Published").length, t: "Published directory records" },
+    { n: progs.filter((r) => r.status === "Published").length, t: "Published program records" },
     { n: `${cs.filter((c) => c.stage === CASE_CLOSED).length} / ${cs.length}`, t: "Cases determined" },
   ];
   const pageHref = (p: number) => `/portal/reports?${new URLSearchParams({ ...(q ? { q } : {}), page: String(p) }).toString()}#audit`;
@@ -49,6 +50,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- file download, not a page */}
         <a href="/portal/export/directory" className="p-btn-secondary">
           Directory CSV
+        </a>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- file download, not a page */}
+        <a href="/portal/export/programs" className="p-btn-secondary">
+          Programs CSV
         </a>
       </ModuleHeader>
       <ModuleBody>
@@ -65,7 +70,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))" }}>
           <Card className="gap-2.5" style={{ padding: 22 }}>
             <h2 className="p-h3">Applications by pathway</h2>
-            <Bars rows={group(apps, (a) => a.pathway)} />
+            <Bars rows={group(apps, (a) => (a.kind === "program" ? "Program accreditation" : a.pathway))} />
           </Card>
           <Card className="gap-2.5" style={{ padding: 22 }}>
             <h2 className="p-h3">Applications by country</h2>
@@ -74,6 +79,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           <Card className="gap-2.5" style={{ padding: 22 }}>
             <h2 className="p-h3">Directory records by classification</h2>
             <Bars rows={CLASSIFICATIONS.map((c) => [c, recs.filter((r) => r.cls === c).length] as [string, number])} />
+          </Card>
+          <Card className="gap-2.5" style={{ padding: 22 }}>
+            <h2 className="p-h3">Program records by status awarded</h2>
+            <Bars rows={PROGRAM_AWARDS.map((c) => [c, progs.filter((r) => r.award === c).length] as [string, number])} />
           </Card>
           <Card className="gap-2.5" style={{ padding: 22 }}>
             <h2 className="p-h3">Complaints and appeals by status</h2>

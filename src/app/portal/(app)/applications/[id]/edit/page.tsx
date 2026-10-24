@@ -21,6 +21,12 @@ export default async function EditApplicationPage({ params }: { params: Promise<
         <ApplicationEditForm
           app={{
             id: a.id,
+            kind: a.kind,
+            programTitle: a.programTitle,
+            programCategory: a.programCategory,
+            programDelivery: a.programDelivery,
+            programDuration: a.programDuration,
+            programLearners: a.programLearners,
             name: a.name,
             country: a.country,
             website: a.website,

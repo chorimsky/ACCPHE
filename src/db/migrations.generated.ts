@@ -65,5 +65,25 @@ export const MIGRATIONS: BundledMigration[] = [
       "ALTER TABLE `cases` ADD `party_email` text DEFAULT '' NOT NULL;",
       "ALTER TABLE `cases` ADD `application_id` text REFERENCES applications(id);"
     ]
+  },
+  {
+    "tag": "0002_strange_echo",
+    "when": 1792863554733,
+    "hash": "c737d96177d17b58fbd449064b5b57ea79d662deb728883ea7e973199b3c9e71",
+    "statements": [
+      "CREATE TABLE `program_record_events` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`program_id` text NOT NULL,\n\t`status` text NOT NULL,\n\t`award` text NOT NULL,\n\t`effective` text NOT NULL,\n\t`note` text DEFAULT '' NOT NULL,\n\t`created_at` integer NOT NULL,\n\tFOREIGN KEY (`program_id`) REFERENCES `program_records`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      "CREATE INDEX `program_record_events_program_idx` ON `program_record_events` (`program_id`,`created_at`);",
+      "CREATE TABLE `program_records` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`slug` text NOT NULL,\n\t`verification` text NOT NULL,\n\t`title` text NOT NULL,\n\t`provider` text NOT NULL,\n\t`country` text NOT NULL,\n\t`category` text DEFAULT '' NOT NULL,\n\t`award` text NOT NULL,\n\t`effective` text DEFAULT '' NOT NULL,\n\t`review` text DEFAULT '' NOT NULL,\n\t`scope` text DEFAULT '' NOT NULL,\n\t`conditions` text DEFAULT '' NOT NULL,\n\t`status` text DEFAULT 'Draft' NOT NULL,\n\t`verified` integer DEFAULT false NOT NULL,\n\t`application_id` text,\n\t`published_at` integer,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`application_id`) REFERENCES `applications`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE UNIQUE INDEX `program_records_slug_uq` ON `program_records` (`slug`);",
+      "CREATE UNIQUE INDEX `program_records_verification_uq` ON `program_records` (`verification`);",
+      "CREATE INDEX `program_records_status_idx` ON `program_records` (`status`);",
+      "ALTER TABLE `applications` ADD `kind` text DEFAULT 'institution' NOT NULL;",
+      "ALTER TABLE `applications` ADD `program_title` text DEFAULT '' NOT NULL;",
+      "ALTER TABLE `applications` ADD `program_category` text DEFAULT '' NOT NULL;",
+      "ALTER TABLE `applications` ADD `program_delivery` text DEFAULT '' NOT NULL;",
+      "ALTER TABLE `applications` ADD `program_duration` text DEFAULT '' NOT NULL;",
+      "ALTER TABLE `applications` ADD `program_learners` text DEFAULT '' NOT NULL;",
+      "CREATE INDEX `applications_kind_idx` ON `applications` (`kind`);"
+    ]
   }
 ];

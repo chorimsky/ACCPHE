@@ -135,3 +135,26 @@ export function AsideBox({ title, text, href, cta }: { title: string; text: stri
     </div>
   );
 }
+
+/** Switch between the two public directories (institutions and approved programs). */
+export function DirectorySwitch({ current }: { current: "institutions" | "programs" }) {
+  const items = [
+    { key: "institutions", href: "/directory", label: "Institutions" },
+    { key: "programs", href: "/directory/programs", label: "Approved programs" },
+  ] as const;
+  return (
+    <nav aria-label="Directory" className="inline-flex self-start border border-line bg-white p-1">
+      {items.map((i) => (
+        <Link
+          key={i.key}
+          href={i.href}
+          aria-current={i.key === current ? "page" : undefined}
+          className={`px-5 py-2.5 no-underline ${i.key === current ? "bg-navy text-mist" : "text-navy hover:bg-mist"}`}
+          style={{ font: "600 14px var(--font-sans)" }}
+        >
+          {i.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}

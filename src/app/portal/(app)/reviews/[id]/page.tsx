@@ -4,8 +4,8 @@ import { db } from "@/db";
 import { applications, reviews } from "@/db/schema";
 import { CoiDeclaration, ReviewEditor } from "@/components/portal/review-editor";
 import { Back, docPill, ModuleBody, ModuleHeader, Pill, ratePill } from "@/components/portal/ui";
-import { EVALUATION_STAGE, RATING_LABELS } from "@/lib/domain";
-import { getStandardTitles } from "@/server/content";
+import { appTitle, RATING_LABELS, trackOf } from "@/lib/domain";
+import { getStandardTitlesFor } from "@/server/content";
 import { fmtDate } from "@/lib/format";
 import { requireModule } from "@/server/auth";
 import { evidenceFile } from "@/server/queries/reviews";
@@ -22,7 +22,9 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     .where(and(eq(reviews.id, id), eq(reviews.reviewerId, user.id)));
   if (!row || row.review.conflictDeclaredAt) notFound();
   const { review: r, app: a } = row;
-  const [evidence, STANDARD_TITLES] = await Promise.all([evidenceFile(a.id), getStandardTitles()]);
+  const [evidence, STANDARD_TITLES] = await Promise.all([evidenceFile(a.id), getStandardTitlesFor(a.kind)]);
+  const T = trackOf(a);
+  const n = r.ratings.length;
   const c = (k: string) => r.ratings.filter((x) => x === k).length;
   const rated = r.ratings.filter(Boolean).length;
   const editable = !!r.coiConfirmedAt && !r.submittedAt;
@@ -34,16 +36,16 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
         <section className="flex flex-wrap items-end justify-between gap-4 rounded border border-line bg-white p-6">
           <div className="flex flex-col gap-1.5">
             <span className="p-meta">
-              {a.ref} · {a.pathway} · {a.country}
+              {a.ref} · {a.kind === "program" ? `${T.label} · ${a.name}` : a.pathway} · {a.country}
             </span>
-            <h2 className="p-h2">{a.name}</h2>
+            <h2 className="p-h2">{appTitle(a)}</h2>
           </div>
           <div className="flex min-w-[220px] flex-col gap-1.5">
             <span className="text-navy" style={{ font: "600 12.5px var(--font-sans)" }}>
-              {rated} of 12 rated
+              {rated} of {n} rated
             </span>
             <span className="block h-1.5 overflow-hidden rounded-[3px] bg-cloud">
-              <span className="block h-full bg-navy" style={{ width: `${(rated / 12) * 100}%` }} />
+              <span className="block h-full bg-navy" style={{ width: `${(rated / n) * 100}%` }} />
             </span>
             <span className="text-muted" style={{ font: "400 12.5px var(--font-sans)" }}>
               {c("met")} met · {c("partial")} partially met · {c("not")} not met
@@ -52,7 +54,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
         </section>
 
         {!r.coiConfirmedAt && <CoiDeclaration reviewId={r.id} />}
-        {r.coiConfirmedAt && a.stage < EVALUATION_STAGE && !r.submittedAt && (
+        {r.coiConfirmedAt && a.stage < T.evaluationStage && !r.submittedAt && (
           <div className="p-note">
             <span aria-hidden="true" className="info-dot">
               i

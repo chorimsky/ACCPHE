@@ -7,7 +7,21 @@ import { useEffect, useRef, useState } from "react";
  * Search box and country filter for the directory. Works as a plain GET form without JavaScript; with JavaScript
  * the results update as you type and the address stays shareable.
  */
-export function DirectoryFilters({ q, country, cls, countries }: { q: string; country: string; cls: string; countries: string[] }) {
+export function DirectoryFilters({
+  q,
+  country,
+  cls,
+  countries,
+  label = "Search by institution name",
+  placeholder = "Institution name",
+}: {
+  q: string;
+  country: string;
+  cls: string;
+  countries: string[];
+  label?: string;
+  placeholder?: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState(q);
@@ -39,7 +53,7 @@ export function DirectoryFilters({ q, country, cls, countries }: { q: string; co
     >
       {cls && <input type="hidden" name="cls" value={cls} />}
       <label className="field flex-[3_1_300px]">
-        Search by institution name
+        {label}
         <input
           name="q"
           value={query}
@@ -49,7 +63,7 @@ export function DirectoryFilters({ q, country, cls, countries }: { q: string; co
             const v = e.target.value;
             timer.current = setTimeout(() => push({ q: v }), 250);
           }}
-          placeholder="Institution name"
+          placeholder={placeholder}
           className="input"
           autoComplete="off"
         />

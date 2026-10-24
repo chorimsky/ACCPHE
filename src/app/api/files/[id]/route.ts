@@ -1,7 +1,7 @@
 import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { applications, files, reviews } from "@/db/schema";
-import { canAccess, DECISION_STAGE } from "@/lib/domain";
+import { awaitingDecision, canAccess } from "@/lib/domain";
 import { audit } from "@/server/audit";
 import { currentUser, officeOf } from "@/server/auth";
 import { getFileStream, INLINE_MIME } from "@/server/storage";
@@ -29,7 +29,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       .where(and(eq(reviews.applicationId, app.id), eq(reviews.reviewerId, user.id), isNotNull(reviews.coiConfirmedAt), isNull(reviews.conflictDeclaredAt)));
     allowed = !!r;
   }
-  if (!allowed && user.role === "commission") allowed = app.stage === DECISION_STAGE && !app.decision;
+  if (!allowed && user.role === "commission") allowed = awaitingDecision(app);
   if (!allowed) return new Response("Not found", { status: 404 });
 
   let stream: ReadableStream<Uint8Array>;

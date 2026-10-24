@@ -97,10 +97,15 @@ export type Pathway = (typeof PATHWAYS)[number];
 export const CLASSIFICATIONS = ["Associate Member", "Accredited Institution", "Distinguished Member"] as const;
 export type Classification = (typeof CLASSIFICATIONS)[number];
 
+/** What an application evaluates: a whole institution, or one program (Independent Program Accreditation). */
+export const APP_KINDS = ["institution", "program"] as const;
+export type AppKind = (typeof APP_KINDS)[number];
+
 export const applications = sqliteTable(
   "applications",
   {
     id: id(),
+    kind: text("kind", { enum: APP_KINDS }).notNull().default("institution"),
     ref: text("ref").notNull(),
     name: text("name").notNull(),
     country: text("country").notNull().default(""),
@@ -114,7 +119,13 @@ export const applications = sqliteTable(
     repPhone: text("rep_phone").notNull().default(""),
     pathway: text("pathway", { enum: PATHWAYS }).notNull(),
     profile: text("profile").notNull().default(""),
-    /** 0–7, see STAGES in src/lib/domain.ts */
+    /** Program applications only (kind = "program"); for these, name/country/type describe the education provider. */
+    programTitle: text("program_title").notNull().default(""),
+    programCategory: text("program_category").notNull().default(""),
+    programDelivery: text("program_delivery").notNull().default(""),
+    programDuration: text("program_duration").notNull().default(""),
+    programLearners: text("program_learners").notNull().default(""),
+    /** Index into the application's track stages (src/lib/domain.ts TRACKS[kind].stages). */
     stage: integer("stage").notNull().default(0),
     officerId: text("officer_id").references(() => users.id, { onDelete: "set null" }),
     /** "" (none yet), a classification, or "Declined" */
@@ -125,7 +136,7 @@ export const applications = sqliteTable(
     submittedAt: ts("submitted_at").notNull().$defaultFn(() => new Date()),
     updatedAt: ts("updated_at").notNull().$defaultFn(() => new Date()),
   },
-  (t) => [uniqueIndex("applications_ref_uq").on(t.ref), index("applications_stage_idx").on(t.stage), index("applications_updated_idx").on(t.updatedAt)],
+  (t) => [uniqueIndex("applications_ref_uq").on(t.ref), index("applications_stage_idx").on(t.stage), index("applications_updated_idx").on(t.updatedAt), index("applications_kind_idx").on(t.kind)],
 );
 
 export const DOC_STATUS = ["Outstanding", "Submitted", "Received"] as const;
@@ -213,7 +224,16 @@ export const reviews = sqliteTable(
   (t) => [uniqueIndex("reviews_app_reviewer_uq").on(t.applicationId, t.reviewerId), index("reviews_reviewer_idx").on(t.reviewerId)],
 );
 
-export const VOTES = ["Award accreditation", "Admit as Associate Member", "Confer Distinguished Membership", "Decline", "Defer for further information", "Recused"] as const;
+export const VOTES = [
+  "Award accreditation",
+  "Admit as Associate Member",
+  "Confer Distinguished Membership",
+  "Award program accreditation",
+  "Grant program recognition",
+  "Decline",
+  "Defer for further information",
+  "Recused",
+] as const;
 export type Vote = (typeof VOTES)[number];
 
 export const votes = sqliteTable(
@@ -468,4 +488,55 @@ export const messageReplies = sqliteTable(
     createdAt: now(),
   },
   (t) => [index("message_replies_msg_idx").on(t.messageId)],
+);
+
+/* ─────────── Independent Program Accreditation: public program directory ─────────── */
+
+export const PROGRAM_AWARDS = ["Accredited Program", "Recognized Program"] as const;
+export type ProgramAward = (typeof PROGRAM_AWARDS)[number];
+
+/** A program in the public directory of approved programs. Public under the same rules as institution records. */
+export const programRecords = sqliteTable(
+  "program_records",
+  {
+    id: id(),
+    slug: text("slug").notNull(),
+    /** Unique public verification number, e.g. ACCPHE-P-2026-0001 */
+    verification: text("verification").notNull(),
+    title: text("title").notNull(),
+    provider: text("provider").notNull(),
+    country: text("country").notNull(),
+    category: text("category").notNull().default(""),
+    award: text("award", { enum: PROGRAM_AWARDS }).notNull(),
+    /** YYYY-MM-DD */
+    effective: text("effective").notNull().default(""),
+    /** YYYY-MM-DD end of the validity period (renewal review) */
+    review: text("review").notNull().default(""),
+    scope: text("scope").notNull().default(""),
+    conditions: text("conditions").notNull().default(""),
+    status: text("status", { enum: RECORD_STATUS }).notNull().default("Draft"),
+    verified: integer("verified", { mode: "boolean" }).notNull().default(false),
+    applicationId: text("application_id").references(() => applications.id, { onDelete: "set null" }),
+    publishedAt: ts("published_at"),
+    createdAt: now(),
+    updatedAt: ts("updated_at").notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [uniqueIndex("program_records_slug_uq").on(t.slug), uniqueIndex("program_records_verification_uq").on(t.verification), index("program_records_status_idx").on(t.status)],
+);
+
+/** Public history of a program record (publication and every later change of status or award). */
+export const programRecordEvents = sqliteTable(
+  "program_record_events",
+  {
+    id: id(),
+    programId: text("program_id")
+      .notNull()
+      .references(() => programRecords.id, { onDelete: "cascade" }),
+    status: text("status", { enum: RECORD_STATUS }).notNull(),
+    award: text("award", { enum: PROGRAM_AWARDS }).notNull(),
+    effective: text("effective").notNull(),
+    note: text("note").notNull().default(""),
+    createdAt: now(),
+  },
+  (t) => [index("program_record_events_program_idx").on(t.programId, t.createdAt)],
 );

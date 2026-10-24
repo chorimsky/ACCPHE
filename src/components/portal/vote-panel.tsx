@@ -2,12 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { VOTE_OPTIONS } from "@/lib/domain";
 import { castVote, recuse } from "@/server/actions/decisions";
 import { useToast } from "./toast";
 
 /** The signed-in Commission member's vote on one application. */
-export function VotePanel({ applicationId, myVote }: { applicationId: string; myVote: string | null }) {
+export function VotePanel({ applicationId, myVote, options, party = "this institution" }: { applicationId: string; myVote: string | null; options: string[]; party?: string }) {
   const [choice, setChoice] = useState("");
   const [note, setNote] = useState("");
   const [noConflict, setNoConflict] = useState(false);
@@ -38,7 +37,7 @@ export function VotePanel({ applicationId, myVote }: { applicationId: string; my
         </div>
       )}
       <div role="radiogroup" aria-label="Vote" className="flex flex-col gap-1.5">
-        {VOTE_OPTIONS.map((o) => {
+        {options.map((o) => {
           const on = choice === o;
           return (
             <button
@@ -59,7 +58,7 @@ export function VotePanel({ applicationId, myVote }: { applicationId: string; my
       <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Reasons (recorded in the deliberation record)…" aria-label="Reasons" className="p-textarea" />
       <label className="flex cursor-pointer items-start gap-2.5" style={{ font: "400 13px/1.5 var(--font-sans)" }}>
         <input type="checkbox" checked={noConflict} onChange={(e) => setNoConflict(e.target.checked)} className="mt-0.5 h-[15px] w-[15px] flex-none" style={{ accentColor: "var(--color-navy)" }} />
-        <span>I have no conflict of interest with this institution.</span>
+        <span>I have no conflict of interest with {party}.</span>
       </label>
       <div className="flex flex-wrap items-center gap-2.5">
         <button

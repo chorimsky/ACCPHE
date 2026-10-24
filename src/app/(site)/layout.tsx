@@ -7,7 +7,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { buildSearchIndex } from "@/lib/search-index";
 import { siteGraph } from "@/lib/seo";
 import { getBlock, getFaqs, getGovernance, getStandards } from "@/server/content";
-import { getSiteContent, publicRecords, publishedArticles } from "@/server/queries/public";
+import { getSiteContent, publicPrograms, publicRecords, publishedArticles } from "@/server/queries/public";
 
 /**
  * Every public page reads portal-managed content (banner, CMS texts, articles, directory) from the database, so the
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 /** Public website shell. Content managed in the portal (banner, status notice) is read on every request. */
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const [content, news, standards, faqs, governance, values, institutions] = await Promise.all([
+  const [content, news, standards, faqs, governance, values, institutions, programs] = await Promise.all([
     getSiteContent(),
     publishedArticles(),
     getStandards(),
@@ -26,6 +26,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
     getGovernance(),
     getBlock<{ t: string; d: string }[]>("values"),
     publicRecords(),
+    publicPrograms(),
   ]);
   return (
     <ChromeProvider>
@@ -59,7 +60,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         )}
         <SiteFooter />
       </div>
-      <SearchDialog index={buildSearchIndex({ news, standards, faqs, governance, values, institutions })} />
+      <SearchDialog index={buildSearchIndex({ news, standards, faqs, governance, values, institutions, programs })} />
       <ConsentNotice />
     </ChromeProvider>
   );

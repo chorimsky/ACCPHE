@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { Back, ModuleBody, ModuleHeader, Pill, ratePill } from "@/components/portal/ui";
 import { VotePanel } from "@/components/portal/vote-panel";
-import { DECISION_STAGE, RATING_LABELS } from "@/lib/domain";
-import { getStandardTitles } from "@/server/content";
+import { appTitle, awaitingDecision, RATING_LABELS, trackOf } from "@/lib/domain";
+import { getStandardTitlesFor } from "@/server/content";
 import { fmtDate } from "@/lib/format";
 import { requireModule } from "@/server/auth";
 import { deliberation, tallyOf } from "@/server/queries/decisions";
@@ -14,10 +14,11 @@ export default async function DecisionPage({ params }: { params: Promise<{ id: s
   const user = await requireModule("decisions");
   const { id } = await params;
   const d = await deliberation(id);
-  if (!d || d.app.stage !== DECISION_STAGE || d.app.decision) notFound();
+  if (!d || !awaitingDecision(d.app)) notFound();
   const { app, revs, vts, memberCount } = d;
   const mine = vts.find((v) => v.vote.voterId === user.id);
-  const [evidence, STANDARD_TITLES] = await Promise.all([evidenceFile(app.id), getStandardTitles()]);
+  const [evidence, STANDARD_TITLES] = await Promise.all([evidenceFile(app.id), getStandardTitlesFor(app.kind)]);
+  const T = trackOf(app);
   return (
     <>
       <ModuleHeader mod="decisions" />
@@ -25,9 +26,9 @@ export default async function DecisionPage({ params }: { params: Promise<{ id: s
         <Back href="/portal/decisions">All decisions</Back>
         <section className="flex flex-col gap-1.5 rounded border border-line bg-white p-6">
           <span className="p-meta">
-            {app.ref} · {app.pathway} · {app.country}
+            {app.ref} · {app.kind === "program" ? `${T.label} · ${app.name}` : app.pathway} · {app.country}
           </span>
-          <h2 className="p-h2">{app.name}</h2>
+          <h2 className="p-h2">{appTitle(app)}</h2>
         </section>
         <div className="flex flex-wrap items-start gap-6">
           <div className="flex min-w-0 flex-[2_1_520px] flex-col gap-6">
@@ -97,7 +98,7 @@ export default async function DecisionPage({ params }: { params: Promise<{ id: s
             </section>
           </div>
           <aside className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
-            <VotePanel applicationId={app.id} myVote={mine?.vote.vote ?? null} />
+            <VotePanel applicationId={app.id} options={T.voteOptions} party={app.kind === "program" ? "this program or its provider" : "this institution"} myVote={mine?.vote.vote ?? null} />
             <section className="flex flex-col gap-2.5 rounded border border-line bg-white p-[22px]">
               <h3 className="p-h3">Deliberation record</h3>
               <span className="text-slate" style={{ font: "600 12.5px var(--font-sans)" }}>

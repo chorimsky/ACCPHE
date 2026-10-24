@@ -4,7 +4,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { files, messages, MESSAGE_ROUTES, PATHWAYS } from "@/db/schema";
 import { attempt, fail, ok, parseForm, zs, type ActionState } from "@/lib/action";
-import { INSTITUTION_TYPES } from "@/lib/domain";
+import { INSTITUTION_TYPES, PROGRAM_DELIVERY, PROVIDER_TYPES } from "@/lib/domain";
 import { abs } from "@/lib/site";
 import { audit } from "@/server/audit";
 import { trySendEmail } from "@/server/email";
@@ -88,6 +88,89 @@ export async function submitInquiry(_prev: ActionState, fd: FormData): Promise<A
     await notifyModule("applications", {
       subject: `New institutional inquiry: ${app.name} (${app.ref})`,
       text: `${app.name} (${app.country}) submitted an inquiry for ${app.pathway} through the website.${stored.length ? ` ${stored.length} supporting document(s) attached.` : ""}`,
+      link: `/portal/applications/${app.id}`,
+    });
+    return ok("received", { ref: app.ref });
+  });
+}
+
+const programSchema = z.object({
+  programTitle: zs.text("Program title", 200),
+  programCategory: zs.text("Program category", 200),
+  programDelivery: z.enum(PROGRAM_DELIVERY as [string, ...string[]], { error: "Select the delivery mode." }),
+  programDuration: zs.text("Duration or learning hours", 120),
+  programLearners: zs.text("Intended learners", 600),
+  profile: zs.text("Program description and objectives", 6000),
+  name: zs.text("Education provider (legal name)", 200),
+  country: zs.text("Country", 100),
+  website: z
+    .string({ error: "Website is required." })
+    .trim()
+    .max(300)
+    .refine((v) => /^https?:\/\/[^\s.]+\.[^\s]+$/i.test(v), "Enter the website as a full address, starting with https://"),
+  type: z.enum(PROVIDER_TYPES as [string, ...string[]], { error: "Select the provider type." }),
+  authRef: zs.opt(200),
+  repName: zs.text("Full name", 150),
+  repPosition: zs.text("Position", 150),
+  repEmail: zs.email("Official email"),
+  repPhone: zs.text("Telephone number", 60),
+  declareAccurate: z.literal("on", { error: "Confirm the accuracy declaration." }),
+  declareDisclosure: z.literal("on", { error: "Acknowledge the accreditation disclosure." }),
+  declarePrivacy: z.literal("on", { error: "Acknowledge the privacy declaration." }),
+  company_website: z.string().optional(),
+});
+
+/** Independent Program Accreditation & Recognition: public application for one program. */
+export async function submitProgramApplication(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return attempt(async () => {
+    const parsed = parseForm(programSchema, fd);
+    if ("error" in parsed) return fail(parsed.error);
+    const d = parsed.data;
+    if (d.company_website) return ok("received", { ref: "PRG-0000" });
+    if (await overIpLimit("program-application", 5, 60 * 60_000)) return fail("Too many applications were sent from this connection. Please try again in an hour or contact the Secretariat.");
+
+    const uploads = fd.getAll("documents").filter((f): f is File => f instanceof File && f.size > 0);
+    if (uploads.length > MAX_INQUIRY_FILES) return fail(`Attach at most ${MAX_INQUIRY_FILES} files. The Secretariat will request the full documentation after reviewing your application.`);
+    if (uploads.reduce((n, f) => n + f.size, 0) > MAX_UPLOAD_BYTES) return fail("Attachments may total at most 4 MB. Send larger documents after the Secretariat contacts you.");
+    const stored = [];
+    for (const f of uploads) stored.push(await putFile(f));
+
+    const app = await createApplication(
+      {
+        kind: "program",
+        programTitle: d.programTitle,
+        programCategory: d.programCategory,
+        programDelivery: d.programDelivery,
+        programDuration: d.programDuration,
+        programLearners: d.programLearners,
+        profile: d.profile,
+        name: d.name,
+        country: d.country,
+        website: d.website,
+        type: d.type,
+        authRef: d.authRef,
+        repName: d.repName,
+        repPosition: d.repPosition,
+        repEmail: d.repEmail,
+        repPhone: d.repPhone,
+        pathway: "Accreditation",
+      },
+      WEBSITE,
+      "website",
+    );
+    if (stored.length) {
+      await db.insert(files).values(stored.map((s) => ({ applicationId: app.id, fileName: s.fileName, storageKey: s.key, size: s.size, mimeType: s.mimeType, uploadedByLabel: "Website" })));
+    }
+
+    await trySendEmail(
+      d.repEmail,
+      `Program application received — ${app.ref}`,
+      `Dear ${d.repName},\n\nThank you for applying for ACCPHE Independent Program Accreditation & Recognition. Your application for “${d.programTitle}” (${d.name}) has been received under the reference ${app.ref}.\n\nThe Secretariat will confirm that the program falls within the scope of the framework and tell you which documents to provide: curriculum, learning outcomes, assessment and certification procedures, instructor qualifications, and your program self-evaluation against the eight program standards.\n\nKeep your reference for all correspondence. You may request a portal account to follow the review and upload documents; quote the reference so the Secretariat can link it.\n\nSubmitting an application does not guarantee accreditation, recognition, or any particular decision. ACCPHE program accreditation is an independent evaluation against ACCPHE’s own published standards and is not government approval.`,
+      { label: "Request a portal account", url: abs(`/portal/register?ref=${encodeURIComponent(app.ref)}`) },
+    );
+    await notifyModule("applications", {
+      subject: `New program application: ${d.programTitle} — ${d.name} (${app.ref})`,
+      text: `${d.name} (${d.country}) applied for program accreditation of “${d.programTitle}” (${d.programCategory}, ${d.programDelivery}).${stored.length ? ` ${stored.length} supporting document(s) attached.` : ""}`,
       link: `/portal/applications/${app.id}`,
     });
     return ok("received", { ref: app.ref });

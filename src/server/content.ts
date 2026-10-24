@@ -72,6 +72,8 @@ export type Policy = { title: string; lede: string; sections: { h: string; p: st
 
 export const getStandards = () => getBlock<Standard[]>("standards");
 export const getStandardTitles = async () => (await getStandards()).map((s) => s.t);
+/** The standards reviewers rate: the twelve institutional standards, or the eight program standards. */
+export const getStandardTitlesFor = async (kind: "institution" | "program") => (kind === "program" ? (await getBlock<TextItem[]>("programs.standards")).map((s) => s.t) : getStandardTitles());
 export const getStandardsMeta = () => getBlock<StandardsMeta>("standards.meta");
 export const getFaqs = () => getBlock<{ q: string; a: string }[]>("faqs");
 export const getProcess = () => getBlock<TextItem[]>("process");
@@ -124,4 +126,9 @@ export async function getProgramAccreditation(): Promise<ProgramAccreditation> {
     getBlock<TextItem[]>("programs.steps"),
   ]);
   return { ...page, standards, steps };
+}
+
+export async function getBenefits() {
+  const [head, items] = await Promise.all([getBlock<{ title: string; tagline: string; intro: string }>("benefits.intro"), getBlock<TextItem[]>("benefits")]);
+  return { ...head, items };
 }

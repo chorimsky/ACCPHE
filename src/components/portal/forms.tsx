@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ARTICLE_CATEGORIES, CASE_TYPES, CLASSIFICATIONS, PATHWAYS, RECORD_STATUS, ROLES } from "@/db/schema";
-import { INSTITUTION_TYPES, ROLE_INFO } from "@/lib/domain";
+import { ARTICLE_CATEGORIES, CASE_TYPES, CLASSIFICATIONS, PATHWAYS, PROGRAM_AWARDS, RECORD_STATUS, ROLES } from "@/db/schema";
+import { INSTITUTION_TYPES, PROGRAM_CATEGORIES, PROGRAM_DELIVERY, PROVIDER_TYPES, ROLE_INFO } from "@/lib/domain";
 import { fmtDate, fmtMonth } from "@/lib/format";
 import { logInquiry, updateApplication } from "@/server/actions/applications";
 import { createCase } from "@/server/actions/cases";
 import { saveContent } from "@/server/actions/content";
 import { saveRecord } from "@/server/actions/directory";
+import { saveProgramRecord } from "@/server/actions/programs";
 import { saveArticle } from "@/server/actions/news";
 import { inviteUser } from "@/server/actions/users";
 import { PortalForm } from "./actions";
@@ -26,36 +27,59 @@ const Opt = ({ list }: { list: readonly string[] }) => (
 
 /* ─────────── Applications ─────────── */
 
-export function NewInquiryForm() {
+/** Program categories offered as suggestions (the published list of eligible programs). */
+function CategoryList({ id }: { id: string }) {
+  return (
+    <datalist id={id}>
+      {PROGRAM_CATEGORIES.map((c) => (
+        <option key={c} value={c} />
+      ))}
+    </datalist>
+  );
+}
+
+export function NewInquiryForm({ kind = "institution" }: { kind?: "institution" | "program" }) {
+  const program = kind === "program";
   return (
     <PortalForm action={logInquiry} className="p-card flex max-w-[860px] flex-col gap-5">
       {(pending) => (
         <>
           <div className="flex flex-col gap-1.5">
             <h2 className="m-0 text-navy" style={{ font: "500 22px var(--font-serif)" }}>
-              Log an institutional inquiry
+              {program ? "Log a program accreditation application" : "Log an institutional inquiry"}
             </h2>
             <span className="text-muted" style={{ font: "400 13.5px/1.5 var(--font-sans)" }}>
-              For inquiries received by email, post, or in person. The record enters the pathway at stage 1, Inquiry &amp; orientation.
+              For applications received by email, post, or in person. The record enters the pathway at stage 1, {program ? "Application" : <>Inquiry &amp; orientation</>}.
             </span>
           </div>
+          <input type="hidden" name="kind" value={kind} />
           <div className="grid gap-[18px]" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,240px),1fr))" }}>
+            {program && (
+              <label className="p-label col-span-full">
+                <span>Program title *</span>
+                <input name="programTitle" required maxLength={200} className="p-input" />
+              </label>
+            )}
             <label className="p-label col-span-full">
-              <span>Legal institution name *</span>
+              <span>{program ? "Education provider (legal name) *" : "Legal institution name *"}</span>
               <input name="name" required maxLength={200} className="p-input" />
             </label>
             <label className="p-label">
               <span>Country *</span>
               <input name="country" required maxLength={100} className="p-input" />
             </label>
+            {program ? (
+              <input type="hidden" name="pathway" value="Accreditation" />
+            ) : (
+              <label className="p-label">
+                <span>Pathway</span>
+                <select name="pathway" defaultValue="Accreditation" className="p-select">
+                  <Opt list={PATHWAYS} />
+                </select>
+              </label>
+            )}
             <label className="p-label">
-              <span>Pathway</span>
-              <select name="pathway" defaultValue="Accreditation" className="p-select">
-                <Opt list={PATHWAYS} />
-              </select>
-            </label>
-            <label className="p-label">
-              <span>Representative</span>
+              <span>{program ? "Contact person" : "Representative"}</span>
               <input name="repName" maxLength={150} className="p-input" />
             </label>
             <label className="p-label">
@@ -67,7 +91,7 @@ export function NewInquiryForm() {
             <button type="submit" disabled={pending} className="p-btn">
               {pending ? "Creating…" : "Create record"}
             </button>
-            <Link href="/portal/applications" className="p-btn-secondary">
+            <Link href={program ? "/portal/applications?kind=program" : "/portal/applications"} className="p-btn-secondary">
               Cancel
             </Link>
           </div>
@@ -193,6 +217,154 @@ export function RecordForm({ record, deleteSlot }: { record: RecordDraft; delete
         </div>
         <p className="small m-0" style={{ fontSize: 12.5 }}>
           Visible to the public when Published, or when a verified record is Suspended, Withdrawn or Expired.
+        </p>
+      </aside>
+    </div>
+  );
+}
+
+export type ProgramRecordDraft = {
+  id: string;
+  verification: string;
+  title: string;
+  provider: string;
+  country: string;
+  category: string;
+  award: string;
+  effective: string;
+  review: string;
+  scope: string;
+  conditions: string;
+  status: string;
+  verified: boolean;
+};
+
+export function ProgramRecordForm({ record, deleteSlot }: { record: ProgramRecordDraft; deleteSlot?: React.ReactNode }) {
+  const [r, setR] = useState(record);
+  const set = (k: keyof ProgramRecordDraft) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setR((x) => ({ ...x, [k]: e.target.type === "checkbox" ? (e.target as HTMLInputElement).checked : e.target.value }));
+  return (
+    <div className="flex flex-wrap items-start gap-6">
+      <PortalForm action={saveProgramRecord} className="p-card flex min-w-0 flex-[2_1_520px] flex-col gap-[22px]">
+        {(pending) => (
+          <>
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="m-0 text-navy" style={{ font: "500 22px var(--font-serif)" }}>
+                {record.id ? "Edit program record" : "New program record"}
+              </h2>
+              <span className="p-meta">{record.verification ? `Verification no. ${record.verification}` : "A verification number is issued when the record is saved"}</span>
+            </div>
+            {record.id && <input type="hidden" name="id" value={record.id} />}
+            <div className="grid gap-[18px]" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,240px),1fr))" }}>
+              <label className="p-label col-span-full">
+                <span>Approved program title *</span>
+                <input name="title" required maxLength={200} value={r.title} onChange={set("title")} className="p-input" />
+              </label>
+              <label className="p-label col-span-full">
+                <span>Education provider *</span>
+                <input name="provider" required maxLength={200} value={r.provider} onChange={set("provider")} className="p-input" />
+              </label>
+              <label className="p-label">
+                <span>Country *</span>
+                <input name="country" required maxLength={100} value={r.country} onChange={set("country")} className="p-input" />
+              </label>
+              <label className="p-label">
+                <span>Category</span>
+                <input name="category" list="program-categories" maxLength={200} value={r.category} onChange={set("category")} className="p-input" />
+                <CategoryList id="program-categories" />
+              </label>
+              <label className="p-label">
+                <span>Status awarded</span>
+                <select name="award" value={r.award} onChange={set("award")} className="p-select">
+                  <Opt list={PROGRAM_AWARDS} />
+                </select>
+              </label>
+              <label className="p-label">
+                <span>Effective date</span>
+                <input name="effective" type="date" value={r.effective} onChange={set("effective")} className="p-input" />
+              </label>
+              <label className="p-label">
+                <span>Valid until (renewal review)</span>
+                <input name="review" type="date" value={r.review} onChange={set("review")} className="p-input" />
+              </label>
+              <label className="p-label col-span-full">
+                <span>Scope</span>
+                <input name="scope" maxLength={300} placeholder="e.g. Program-level accreditation — online delivery" value={r.scope} onChange={set("scope")} className="p-input" />
+              </label>
+              <label className="p-label col-span-full">
+                <span>Conditions (if any)</span>
+                <textarea name="conditions" rows={3} maxLength={2000} value={r.conditions} onChange={set("conditions")} className="p-textarea" />
+              </label>
+              <label className="p-label">
+                <span>Status</span>
+                <select name="status" value={r.status} onChange={set("status")} className="p-select">
+                  <Opt list={RECORD_STATUS} />
+                </select>
+              </label>
+              {(r.status !== record.status || r.award !== record.award) && record.id && (
+                <label className="p-label col-span-full">
+                  <span>Public note on this change (optional)</span>
+                  <input name="changeNote" maxLength={500} placeholder="e.g. Withdrawn at the provider’s request" className="p-input" />
+                </label>
+              )}
+            </div>
+            <label className="flex cursor-pointer items-start gap-3 rounded-[3px] border border-line bg-mist p-4">
+              <input type="checkbox" name="verified" checked={r.verified} onChange={set("verified")} className="mt-[3px] h-4 w-4 flex-none" style={{ accentColor: "var(--color-navy)" }} />
+              <span className="flex flex-col gap-[3px]">
+                <span className="text-navy" style={{ font: "600 14px var(--font-sans)" }}>
+                  Formal decision verified
+                </span>
+                <span className="text-muted" style={{ font: "400 13px/1.5 var(--font-sans)" }}>
+                  I confirm this record reflects a formal decision of the authorized body, including the approved title, scope, validity period, and conditions.
+                </span>
+              </span>
+            </label>
+            <div className="flex flex-wrap items-center gap-2.5 border-t border-cloud pt-4">
+              <button type="submit" name="intent" value="publish" disabled={pending} className="p-btn">
+                Save and publish
+              </button>
+              <button type="submit" name="intent" value="save" disabled={pending} className="p-btn-secondary">
+                Save
+              </button>
+              <Link href="/portal/directory?kind=programs" className="p-btn-secondary">
+                Cancel
+              </Link>
+              {deleteSlot && <div className="ml-auto">{deleteSlot}</div>}
+            </div>
+          </>
+        )}
+      </PortalForm>
+      <aside className="flex min-w-0 flex-[1_1_300px] flex-col gap-3">
+        <span className="p-eyebrow">Public directory preview</span>
+        <div className="flex flex-col gap-2.5 rounded border border-line bg-white p-5">
+          <span style={{ font: "600 17px/1.3 var(--font-serif)", color: "var(--color-navy)" }}>{r.title || "Program title"}</span>
+          <span className="text-muted" style={{ font: "400 13px var(--font-sans)" }}>
+            {[r.provider || "Provider", r.country].filter(Boolean).join(" · ")}
+          </span>
+          <span className="self-start border border-steel px-2.5 py-1 text-navy" style={{ font: "600 12px var(--font-sans)" }}>
+            {r.award}
+          </span>
+          {r.status !== "Published" && r.status !== "Draft" && (
+            <span className="text-bad" style={{ font: "700 11px var(--font-sans)", letterSpacing: ".1em", textTransform: "uppercase" }}>
+              Status: {r.status}
+            </span>
+          )}
+          <div className="grid grid-cols-[auto_1fr] gap-x-3.5 gap-y-1.5 border-t border-cloud pt-2" style={{ font: "400 13px var(--font-sans)" }}>
+            <span className="text-muted">Verification</span>
+            <span>{record.verification || "Issued on save"}</span>
+            <span className="text-muted">Effective</span>
+            <span>{r.effective ? fmtDate(r.effective) : "—"}</span>
+            <span className="text-muted">Valid until</span>
+            <span>{r.review ? fmtDate(r.review) : "—"}</span>
+          </div>
+          {r.conditions && (
+            <span className="text-muted" style={{ font: "400 12.5px/1.5 var(--font-sans)" }}>
+              {r.conditions}
+            </span>
+          )}
+        </div>
+        <p className="small m-0" style={{ fontSize: 12.5 }}>
+          Visible to the public when Published, or when a verified record is Suspended, Withdrawn or Expired. Accreditation applies only to the approved program.
         </p>
       </aside>
     </div>
@@ -508,6 +680,7 @@ export function InviteForm() {
 /* ─────────── Application details ─────────── */
 
 export function ApplicationEditForm({ app }: { app: Record<string, string> }) {
+  const program = app.kind === "program";
   const f = (name: string, label: string, opts: { type?: string; full?: boolean; max?: number } = {}) => (
     <label className={`p-label ${opts.full ? "col-span-full" : ""}`}>
       <span>{label}</span>
@@ -520,21 +693,47 @@ export function ApplicationEditForm({ app }: { app: Record<string, string> }) {
         <>
           <input type="hidden" name="id" value={app.id} />
           <div className="grid gap-[18px]" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,240px),1fr))" }}>
-            {f("name", "Legal institution name *", { full: true })}
+            {program && (
+              <>
+                {f("programTitle", "Program title *", { full: true })}
+                <label className="p-label">
+                  <span>Program category</span>
+                  <input name="programCategory" list="edit-program-categories" defaultValue={app.programCategory} maxLength={200} className="p-input" />
+                  <CategoryList id="edit-program-categories" />
+                </label>
+                <label className="p-label">
+                  <span>Delivery mode</span>
+                  <select name="programDelivery" defaultValue={app.programDelivery} className="p-select">
+                    <option value="">—</option>
+                    <Opt list={PROGRAM_DELIVERY} />
+                  </select>
+                </label>
+                {f("programDuration", "Duration / learning hours", { max: 120 })}
+                <label className="p-label col-span-full">
+                  <span>Intended learners</span>
+                  <textarea name="programLearners" rows={2} defaultValue={app.programLearners} maxLength={600} className="p-textarea" />
+                </label>
+              </>
+            )}
+            {f("name", program ? "Education provider (legal name) *" : "Legal institution name *", { full: true })}
             {f("country", "Country *", { max: 100 })}
-            <label className="p-label">
-              <span>Pathway</span>
-              <select name="pathway" defaultValue={app.pathway} className="p-select">
-                <Opt list={PATHWAYS} />
-              </select>
-            </label>
+            {program ? (
+              <input type="hidden" name="pathway" value={app.pathway} />
+            ) : (
+              <label className="p-label">
+                <span>Pathway</span>
+                <select name="pathway" defaultValue={app.pathway} className="p-select">
+                  <Opt list={PATHWAYS} />
+                </select>
+              </label>
+            )}
             {f("website", "Official website", { type: "url", max: 300 })}
             {f("yearEstablished", "Year established", { max: 4 })}
             <label className="p-label">
-              <span>Institution type</span>
+              <span>{program ? "Provider type" : "Institution type"}</span>
               <select name="type" defaultValue={app.type} className="p-select">
                 <option value="">—</option>
-                <Opt list={INSTITUTION_TYPES} />
+                <Opt list={program ? PROVIDER_TYPES : INSTITUTION_TYPES} />
               </select>
             </label>
             {f("authRef", "Authorization / registration reference")}
@@ -543,7 +742,7 @@ export function ApplicationEditForm({ app }: { app: Record<string, string> }) {
             {f("repEmail", "Representative email", { type: "email" })}
             {f("repPhone", "Telephone", { type: "tel", max: 60 })}
             <label className="p-label col-span-full">
-              <span>Institutional profile</span>
+              <span>{program ? "Program description and objectives" : "Institutional profile"}</span>
               <textarea name="profile" rows={6} defaultValue={app.profile} maxLength={6000} className="p-textarea" />
             </label>
           </div>

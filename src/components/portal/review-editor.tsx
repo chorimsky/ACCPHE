@@ -113,14 +113,14 @@ export function ReviewEditor({ reviewId, ratings: initialRatings, comments, summ
             className="p-textarea"
           />
           <span className="text-muted" style={{ font: "400 12.5px/1.5 var(--font-sans)" }}>
-            {rated} of 12 standards rated. All twelve must be rated before submission. Changes save automatically{sum.state === "saving" ? " — saving…" : sum.state === "saved" ? " — saved." : "."}
+            {rated} of {STANDARD_TITLES.length} standards rated. All {STANDARD_TITLES.length} must be rated before submission. Changes save automatically{sum.state === "saving" ? " — saving…" : sum.state === "saved" ? " — saved." : "."}
           </span>
           <button
             type="button"
             className="p-btn"
             disabled={pending}
             onClick={() => {
-              if (rated < 12) return toast(`Rate all twelve standards before submitting (${rated} of 12).`, true);
+              if (rated < STANDARD_TITLES.length) return toast(`Rate all ${STANDARD_TITLES.length} standards before submitting (${rated} of ${STANDARD_TITLES.length}).`, true);
               if (!summary.trim()) return toast("Add an overall summary and recommendation.", true);
               if (!window.confirm("Submit the review report? It cannot be edited afterwards.")) return;
               start(async () => {

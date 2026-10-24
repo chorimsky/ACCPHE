@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Eyebrow, PageHero, StatusMatrix } from "@/components/site/blocks";
+import { DirectorySwitch, Eyebrow, PageHero, StatusMatrix } from "@/components/site/blocks";
 import { DirectoryFilters } from "@/components/site/directory-filters";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SEO } from "@/content/site";
@@ -57,6 +57,7 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
       />
       <section className="bg-white">
         <div className="wrap flex flex-col gap-6" style={{ paddingTop: "clamp(40px,5vw,56px)", paddingBottom: "clamp(72px,9vw,104px)" }}>
+          <DirectorySwitch current="institutions" />
           <DirectoryFilters q={q} country={country} cls={cat.key} countries={countries} />
           <nav aria-label="Classification" className="flex flex-wrap border-b border-line">
             {CATS.map((c) => {

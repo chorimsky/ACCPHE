@@ -2,14 +2,10 @@ import "server-only";
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import { applications, reviews, users, votes } from "@/db/schema";
-import { DECISION_STAGE } from "@/lib/domain";
+import { awaitingDecision } from "@/lib/domain";
 
 export async function deliberations() {
-  const apps = await db
-    .select()
-    .from(applications)
-    .where(and(eq(applications.stage, DECISION_STAGE), eq(applications.decision, "")))
-    .orderBy(asc(applications.updatedAt));
+  const apps = (await db.select().from(applications).where(eq(applications.decision, "")).orderBy(asc(applications.updatedAt))).filter(awaitingDecision);
   const ids = apps.map((a) => a.id);
   const [revs, vts, members] = await Promise.all([
     ids.length ? db.select().from(reviews).where(and(inArray(reviews.applicationId, ids), isNotNull(reviews.submittedAt))) : [],

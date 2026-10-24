@@ -1,11 +1,11 @@
 import "server-only";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { applicationNotes, applications, files, records, requirements, reviews, users, votes, type Classification, type NoteKind, type Pathway } from "@/db/schema";
-import { REQUIREMENTS } from "@/lib/domain";
+import { applicationNotes, applications, files, programRecords, records, requirements, reviews, users, votes, PROGRAM_AWARDS, type AppKind, type Classification, type NoteKind, type Pathway, type ProgramAward } from "@/db/schema";
+import { appTitle, TRACKS, trackOf } from "@/lib/domain";
 import { slugify } from "@/lib/site";
 import { UserError } from "@/lib/action";
-import { nextApplicationRef } from "@/server/sequence";
+import { nextApplicationRef, nextProgramRef, nextProgramVerification } from "@/server/sequence";
 import { audit } from "@/server/audit";
 
 export type Actor = { id: string | null; who: string };
@@ -25,6 +25,12 @@ export async function addNote(applicationId: string, kind: NoteKind, text: strin
 }
 
 export type NewApplication = {
+  kind?: AppKind;
+  programTitle?: string;
+  programCategory?: string;
+  programDelivery?: string;
+  programDuration?: string;
+  programLearners?: string;
   name: string;
   country: string;
   pathway: Pathway;
@@ -41,20 +47,22 @@ export type NewApplication = {
 
 /** Create an application at stage 1 with its document requirements, a first note, and an audit entry. */
 export async function createApplication(input: NewApplication, actor: Actor, source: "website" | "staff") {
-  const ref = await nextApplicationRef();
+  const kind = input.kind ?? "institution";
+  const ref = kind === "program" ? await nextProgramRef() : await nextApplicationRef();
   const [app] = await db
     .insert(applications)
-    .values({ ...input, ref, source, stage: 0, checks: {} })
+    .values({ ...input, kind, ref, source, stage: 0, checks: {} })
     .returning();
-  await db.insert(requirements).values(REQUIREMENTS.map((name, position) => ({ applicationId: app.id, name, position })));
-  await addNote(app.id, "system", source === "website" ? "Institutional inquiry received via the public website." : "Inquiry logged by the Secretariat.", actor);
+  await db.insert(requirements).values(TRACKS[kind].requirements.map((name, position) => ({ applicationId: app.id, name, position })));
+  const what = kind === "program" ? "Program accreditation application" : "Institutional inquiry";
+  await addNote(app.id, "system", source === "website" ? `${what} received via the public website.` : `${what} logged by the Secretariat.`, actor);
   await audit({
     actorId: actor.id,
     who: actor.who,
     action: "application.create",
     entityType: "application",
     entityId: app.id,
-    summary: source === "website" ? `New inquiry received from ${app.name}` : `Inquiry logged: ${app.name}`,
+    summary: source === "website" ? `New ${kind === "program" ? "program application" : "inquiry"} received from ${app.name}${kind === "program" ? ` — ${app.programTitle}` : ""}` : `${what} logged: ${appTitle(app)}`,
   });
   return app;
 }
@@ -70,8 +78,60 @@ export async function uniqueRecordSlug(name: string, country: string, exceptId?:
   return `${base}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
+/** Unique slug for a program record. */
+export async function uniqueProgramSlug(title: string, provider: string, exceptId?: string): Promise<string> {
+  const base = slugify(`${title} ${provider}`).slice(0, 90);
+  for (let i = 1; i < 500; i++) {
+    const slug = i === 1 ? base : `${base}-${i}`;
+    const [hit] = await db.select({ id: programRecords.id }).from(programRecords).where(eq(programRecords.slug, slug));
+    if (!hit || hit.id === exceptId) return slug;
+  }
+  return `${base}-${crypto.randomUUID().slice(0, 8)}`;
+}
+
+/** Program decisions: a draft program record (with its verification number) is created for verification. */
+async function recordProgramDecision(app: Application, decision: ProgramAward | "Declined", actor: Actor) {
+  const t = new Date();
+  if (decision === "Declined") {
+    await db.update(applications).set({ decision, updatedAt: t }).where(eq(applications.id, app.id));
+    await addNote(app.id, "system", "Program application declined by the authorized body.", actor);
+    return null;
+  }
+  const effective = t.toISOString().slice(0, 10);
+  const title = app.programTitle || app.name;
+  const [rec] = await db
+    .insert(programRecords)
+    .values({
+      slug: await uniqueProgramSlug(title, app.name),
+      verification: await nextProgramVerification(t.getUTCFullYear()),
+      title,
+      provider: app.name,
+      country: app.country,
+      category: app.programCategory,
+      award: decision,
+      effective,
+      review: `${t.getUTCFullYear() + 3}${effective.slice(4)}`,
+      scope: decision === "Accredited Program" ? "Program-level accreditation" : "Program recognition",
+      status: "Draft",
+      verified: false,
+      applicationId: app.id,
+    })
+    .returning();
+  await db.update(applications).set({ decision, stage: TRACKS.program.decisionStage + 1, updatedAt: t }).where(eq(applications.id, app.id));
+  await addNote(app.id, "system", `Decision recorded: ${decision}. A draft program record (${rec.verification}) was created for verification.`, actor);
+  return rec;
+}
+
 /** Record the authorized body's decision. Awards create a draft directory record for verification. */
-export async function recordDecision(app: Application, decision: Classification | "Declined", actor: Actor) {
+export async function recordDecision(app: Application, decision: string, actor: Actor) {
+  if (app.kind === "program") {
+    if (decision !== "Declined" && !PROGRAM_AWARDS.includes(decision as ProgramAward)) throw new UserError("Unknown decision.");
+    return recordProgramDecision(app, decision as ProgramAward | "Declined", actor);
+  }
+  return recordInstitutionDecision(app, decision as Classification | "Declined", actor);
+}
+
+async function recordInstitutionDecision(app: Application, decision: Classification | "Declined", actor: Actor) {
   const t = new Date();
   if (decision === "Declined") {
     await db.update(applications).set({ decision, updatedAt: t }).where(eq(applications.id, app.id));
@@ -95,7 +155,7 @@ export async function recordDecision(app: Application, decision: Classification 
       applicationId: app.id,
     })
     .returning();
-  await db.update(applications).set({ decision, stage: 7, updatedAt: t }).where(eq(applications.id, app.id));
+  await db.update(applications).set({ decision, stage: trackOf(app).decisionStage + 1, updatedAt: t }).where(eq(applications.id, app.id));
   await addNote(app.id, "system", `Decision recorded: ${decision}. A draft directory record was created for verification.`, actor);
   return rec;
 }

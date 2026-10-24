@@ -18,6 +18,16 @@ export async function nextApplicationRef(year = new Date().getUTCFullYear()) {
   return `ACC-${year}-${String(await nextNumber(`acc:${year}`)).padStart(4, "0")}`;
 }
 
+/** PRG-2026-0001 (program applications) */
+export async function nextProgramRef(year = new Date().getUTCFullYear()) {
+  return `PRG-${year}-${String(await nextNumber(`prg:${year}`)).padStart(4, "0")}`;
+}
+
+/** ACCPHE-P-2026-0001: public verification number of an approved program */
+export async function nextProgramVerification(year = new Date().getUTCFullYear()) {
+  return `ACCPHE-P-${year}-${String(await nextNumber(`prgv:${year}`)).padStart(4, "0")}`;
+}
+
 /** CMP-2026-001 / APL-2026-001 */
 export async function nextCaseRef(type: "Complaint" | "Appeal", year = new Date().getUTCFullYear()) {
   const prefix = type === "Appeal" ? "APL" : "CMP";

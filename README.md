@@ -36,6 +36,10 @@ Next.js 16 (App Router, Server Components, Server Actions) · TypeScript · Tail
 | `/about`, `/accreditation`, `/standards`, `/governance` | Council content, scroll-spy contents, FAQ, standards browser |
 | `/directory` (`?q=`, `?country=`, `?cls=`) | Official directory and status verification |
 | `/directory/<slug>` | One institution's record (with `EducationalOrganization` structured data) |
+| `/accreditation/programs` | Independent Program Accreditation & Recognition (eight program standards, six steps, disclosure) |
+| `/accreditation/programs/apply` | Program accreditation application (one program per application; reference `PRG-YYYY-NNNN`) |
+| `/directory/programs` (`?q=`, `?country=`, `?cls=`) | Directory of approved programs; entering a verification number (`ACCPHE-P-YYYY-NNNN`) opens its record |
+| `/directory/programs/<slug>` | One approved program's record (with `Course` + credential structured data) |
 | `/news` (`?category=`), `/news/<slug>`, `/news/rss.xml` | News & Insights (articles dated in the future are scheduled) |
 | `/apply` | Institutional inquiry with pathway finder and document upload |
 | `/contact` (`?topic=general|membership|verification|ethics`) | Contact form |
@@ -49,12 +53,12 @@ Site search: `/` or Ctrl/Cmd + K. Navigation language: EN / FR / ES / PT (offici
 | Role | Modules |
 |---|---|
 | Administrator | Overview, Applications, Directory records, News & articles, Complaints & appeals, Messages, Site content, Users & access, Reports & audit |
-| Accreditation Officer | Overview, Applications, Directory records |
+| Accreditation Officer | Overview, Applications (institutions and programs), Directory records (institutions and programs) |
 | Communications Editor | Overview, News & articles, Messages, Site content |
 | Standards & Ethics Officer | Overview, Complaints & appeals, Messages |
-| Institutional Reviewer | My reviews (assigned only; conflict-of-interest declaration; 12-standard rating; report) |
+| Institutional Reviewer | My reviews (assigned only; conflict-of-interest declaration; rating against the 12 institutional or 8 program standards; report) |
 | Accreditation Commission Member | Decisions (review record, own vote, recusal) |
-| Institution Representative | My application (pathway, uploads, correspondence, annual reports and substantive change once accredited) |
+| Institution Representative | My application — institution or program (pathway, uploads, correspondence, reports and substantive change once decided) |
 
 Everyone has Account settings (profile, notifications, password, two-step verification). Permissions are enforced on
 the server for every page, action, download and export.
@@ -75,6 +79,14 @@ the server for every page, action, download and export.
 5. Staff verify and publish the record → it appears in the public directory and the sitemap.
 6. The institution's representative requests an account quoting the reference; an administrator approves and links it; the representative follows progress, uploads documents and, once accredited, submits annual reports and substantive-change notices.
 7. Articles, the announcement banner, the status notice and contact details published in the portal appear on the website immediately.
+
+### Program accreditation flow
+
+1. A provider submits `/accreditation/programs/apply` → program application at step 1 (`PRG-YYYY-NNNN`), acknowledgement email, staff alert. (Staff can also log one: Applications → Programs → *Log a program application*.)
+2. Staff work the six steps (Application → Documentation & self-evaluation → Independent program review → Accreditation decision → Certification & public verification → Ongoing quality assurance) with step checklists and the program document list.
+3. Reviewers rate the program against the eight program standards (Site content → Program Accreditation; the list length is fixed because reviews depend on it).
+4. Commission members vote (*Award program accreditation*, *Grant program recognition*, *Decline*, *Defer*); staff record the decision → a draft program record with a unique verification number (`ACCPHE-P-YYYY-NNNN`, valid three years by default).
+5. Staff verify and publish the record (Directory records → Programs) → it appears in `/directory/programs`, the sitemap and site search; status changes keep a dated public history. Staff then move the program to Ongoing quality assurance; renewals due within 90 days appear on the Overview.
 
 ## Commands
 
