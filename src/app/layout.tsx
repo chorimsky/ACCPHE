@@ -4,7 +4,7 @@ import { INDEXABLE, ORG, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
 const sans = Public_Sans({ variable: "--font-public-sans", subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], display: "swap" });
-const serif = Source_Serif_4({ variable: "--font-source-serif", subsets: ["latin", "latin-ext"], weight: ["400", "500", "600"], style: ["normal", "italic"], display: "swap" });
+const serif = Source_Serif_4({ variable: "--font-source-serif", subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], style: ["normal", "italic"], display: "swap" });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

@@ -159,6 +159,12 @@
     text-transform: uppercase;
     color: var(--color-slate);
   }
+  /* Full organisation name above the homepage headline. */
+  .org-title {
+    font: 700 clamp(24px, 2.6vw, 36px) / 1.2 var(--font-serif);
+    letter-spacing: 0.005em;
+    text-wrap: balance;
+  }
   .h1-hero {
     margin: 0;
     font: 500 clamp(40px, 5.4vw, 70px) / 1.03 var(--font-serif);

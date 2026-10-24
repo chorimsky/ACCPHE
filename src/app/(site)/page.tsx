@@ -5,6 +5,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { FRAMEWORK, SEO } from "@/content/site";
 import { getBlock, getClasses, getFaqs, getPillars, getVmp } from "@/server/content";
 import { fmtMonth } from "@/lib/format";
+import { ORG } from "@/lib/site";
 import { faqGraph, pageGraph, seoFor } from "@/lib/seo";
 import { publishedArticles } from "@/server/queries/public";
 
@@ -38,6 +39,7 @@ export default async function HomePage() {
         <Ornament size={880} cross={false} className="hidden md:block" style={{ right: -120, top: 40 }} />
         <div className="wrap relative flex flex-wrap items-end gap-14" style={{ paddingTop: "clamp(72px,10vw,128px)", paddingBottom: "clamp(56px,6vw,72px)" }}>
           <div className="flex flex-[999_1_560px] flex-col gap-7">
+            <p className="org-title m-0 max-w-[760px] border-b border-white/15 pb-6 text-white">{ORG.name}</p>
             <Eyebrow dark>{hero.eyebrow}</Eyebrow>
             <h1 className="h1-hero">{hero.title}</h1>
             <p className="m-0 max-w-[620px] text-fog" style={{ font: "400 clamp(17px,1.5vw,20px)/1.6 var(--font-sans)", textWrap: "pretty" }}>
