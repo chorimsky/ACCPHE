@@ -15,10 +15,25 @@ export function fmtMonth(x: Date | string | number): string {
   return Number.isNaN(+d) ? "" : d.toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
 }
 
+/**
+ * Time zone for times shown in the portal: APP_TIME_ZONE (an IANA name such as "Africa/Douala"), else UTC.
+ * Not process.env.TZ — Vercel sets it to ":UTC" (POSIX syntax), which Intl rejects with a RangeError.
+ */
+const TIME_ZONE = (() => {
+  const tz = process.env.APP_TIME_ZONE?.trim();
+  if (!tz) return "UTC";
+  try {
+    new Intl.DateTimeFormat("en-GB", { timeZone: tz });
+    return tz;
+  } catch {
+    return "UTC";
+  }
+})();
+
 /** 3 Mar 2026, 14:05 */
 export function fmtDateTime(x: Date | number): string {
   const d = new Date(x);
-  return `${fmtDate(d)}, ${d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: process.env.TZ || "UTC" })}`;
+  return `${fmtDate(d)}, ${d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: TIME_ZONE })}`;
 }
 
 /** just now · 5 min ago · 3 h ago · 2 d ago · 3 Mar 2026 */

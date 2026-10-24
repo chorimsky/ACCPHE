@@ -135,3 +135,42 @@ export function NoteComposer({
     </div>
   );
 }
+
+/**
+ * "Password link" for an account. When email is delivered the link goes to the person; when it is not (email delivery
+ * off, or Resend not configured yet) the server returns the one-time link so the administrator can pass it on.
+ */
+export function PasswordLinkButton({ action, name, emailOn }: { action: () => Promise<ActionResult>; name: string; emailOn: boolean }) {
+  const [link, setLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  return (
+    <span className="inline-flex flex-col items-end gap-2">
+      <ActionButton
+        action={action}
+        className="p-link"
+        confirm={emailOn ? `Email ${name} a link to choose a new password?` : `Create a one-time password link for ${name}? You will need to send it to them yourself.`}
+        onDone={(r) => {
+          setCopied(false);
+          setLink(r.ok && typeof r.data?.link === "string" ? r.data.link : null);
+        }}
+      >
+        Password link
+      </ActionButton>
+      {link && (
+        <span className="flex max-w-[420px] items-center gap-2 rounded border border-line bg-mist px-2.5 py-1.5" style={{ font: "500 12.5px/1.4 var(--font-sans)" }}>
+          <input readOnly value={link} aria-label={`One-time password link for ${name}`} className="min-w-0 flex-1 bg-transparent text-navy outline-none" onFocus={(e) => e.currentTarget.select()} />
+          <button
+            type="button"
+            className="p-link"
+            onClick={() => {
+              void navigator.clipboard?.writeText(link);
+              setCopied(true);
+            }}
+          >
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </span>
+      )}
+    </span>
+  );
+}

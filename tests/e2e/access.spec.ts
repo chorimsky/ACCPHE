@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { ACCOUNTS, alertBox, PASSWORD, signIn } from "./helpers";
+import { ACCOUNTS, alertBox, autoConfirm, PASSWORD, signIn } from "./helpers";
 
 test.describe("access control", () => {
   test("signed-out visitors are sent to sign-in, and come back after", async ({ page }) => {
@@ -63,5 +63,26 @@ test.describe("access control", () => {
   test("the portal is never indexed", async ({ request }) => {
     const res = await request.get("/portal/sign-in");
     expect(res.headers()["x-robots-tag"]).toContain("noindex");
+  });
+
+  test("reports and messages render with Vercel's TZ setting", async ({ page }) => {
+    await signIn(page, ACCOUNTS.admin);
+    for (const path of ["/portal/reports", "/portal/messages"]) {
+      const res = await page.goto(path);
+      expect(res?.status(), path).toBe(200);
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    }
+  });
+
+  test("without email delivery, an administrator gets a one-time password link to pass on", async ({ page }) => {
+    autoConfirm(page);
+    await signIn(page, ACCOUNTS.admin);
+    await page.goto("/portal/users?status=active");
+    const row = page.getByRole("row").filter({ hasText: ACCOUNTS.editor });
+    await row.getByRole("button", { name: "Password link" }).click();
+    const link = row.getByRole("textbox", { name: /One-time password link/ });
+    await expect(link).toHaveValue(/\/portal\/reset\/[\w-]{20,}$/);
+    await page.goto(new URL(await link.inputValue()).pathname);
+    await expect(page.getByText("Choose a new password").first()).toBeVisible();
   });
 });

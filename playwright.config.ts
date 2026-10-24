@@ -15,6 +15,8 @@ const env = {
   ALLOW_LOCAL_STORAGE: "1",
   RESEND_API_KEY: "",
   SECRETARIAT_EMAIL: "secretariat@accphe.test",
+  // As on Vercel (POSIX syntax that Intl rejects): portal times must not depend on TZ.
+  TZ: ":UTC",
 };
 
 export default defineConfig({

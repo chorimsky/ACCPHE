@@ -1,7 +1,7 @@
 import { asc, desc } from "drizzle-orm";
 import { db } from "@/db";
 import { applications, users, USER_STATUS } from "@/db/schema";
-import { ActionButton } from "@/components/portal/actions";
+import { ActionButton, PasswordLinkButton } from "@/components/portal/actions";
 import { InviteForm } from "@/components/portal/forms";
 import { InfoNote, ModuleBody, ModuleHeader, Pill, Tabs } from "@/components/portal/ui";
 import { PickAndRun, SaveSelect } from "@/components/portal/widgets";
@@ -10,6 +10,7 @@ import { fmtDate, fmtRelative } from "@/lib/format";
 import { approveUser, linkApplication, resetUserMfa, sendPasswordLink, setUserRole, setUserStatus } from "@/server/actions/users";
 import { ROLES } from "@/db/schema";
 import { requireModule } from "@/server/auth";
+import { emailEnabled } from "@/server/email";
 
 export const metadata = { title: "Users & access" };
 
@@ -111,9 +112,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                           )}
                           <div className="flex flex-wrap justify-end gap-3.5">
                             {tab === "active" && (
-                              <ActionButton action={sendPasswordLink.bind(null, u.id)} className="p-link" confirm={`Email ${u.name} a link to choose a new password?`}>
-                                Password link
-                              </ActionButton>
+                              <PasswordLinkButton action={sendPasswordLink.bind(null, u.id)} name={u.name} emailOn={emailEnabled()} />
                             )}
                             {tab === "active" && u.mfaEnabled && (
                               <ActionButton action={resetUserMfa.bind(null, u.id)} className="p-link" confirm={`Reset two-step verification for ${u.name}? Do this only after confirming their identity.`}>

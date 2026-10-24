@@ -11,7 +11,7 @@ import { randomToken } from "@/lib/crypto";
 import { abs } from "@/lib/site";
 import { audit } from "@/server/audit";
 import { authorize, hashPassword, issueResetToken, officeOf, revokeUserSessions } from "@/server/auth";
-import { trySendEmail } from "@/server/email";
+import { emailEnabled, trySendEmail } from "@/server/email";
 
 const refresh = () => revalidatePath("/portal", "layout");
 
@@ -160,6 +160,11 @@ export async function sendPasswordLink(id: string): Promise<ActionResult> {
     if (!u || u.status !== "active") return fail("Only active accounts can receive a password link.");
     const token = await issueResetToken(u.id);
     await trySendEmail(u.email, "Choose a new ACCPHE Portal password", `Hello ${u.name},\n\nThe Executive Secretariat sent you a link to choose a new password. It expires in 60 minutes and can be used once.`, { label: "Choose a password", url: abs(`/portal/reset/${token}`) });
+    if (!emailEnabled()) {
+      // Email is not delivered: hand the one-time link to the administrator to pass on.
+      await audit({ actorId: user.id, who, action: "user.password_link", entityType: "user", entityId: id, summary: `Password link created for ${u.name} (email delivery off)` });
+      return ok(`One-time link for ${u.name} — copy it below and send it to them. It expires in 60 minutes.`, { link: abs(`/portal/reset/${token}`) });
+    }
     await audit({ actorId: user.id, who, action: "user.password_link", entityType: "user", entityId: id, summary: `Password link sent to ${u.name}` });
     return ok(`Password link sent to ${u.email}`);
   });
