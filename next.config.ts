@@ -46,6 +46,9 @@ const nextConfig: NextConfig = {
     // Documents are uploaded through Server Actions. Storage caps files at 4 MB and Vercel Functions reject bodies
     // over 4.5 MB; the public inquiry form allows up to 3 files of 4 MB in total.
     serverActions: { bodySizeLimit: "5mb" },
+    // Vercel restores .next/cache between builds; with Turbopack's build cache on, a CSS edit in globals.css shipped
+    // the previous stylesheet (the Tailwind loader's output was reused). Builds take ~40 s without it.
+    turbopackFileSystemCacheForBuild: false,
   },
   turbopack: {
     root: __dirname,
