@@ -21,7 +21,8 @@ export async function setMessageRead(id: string, read: boolean): Promise<ActionR
       await db.update(messages).set({ read }).where(eq(messages.id, id));
       refresh();
     }
-    return ok();
+    // Opening a message marks it read silently; marking it unread is a deliberate action and is confirmed.
+    return ok(read ? undefined : "Marked as unread");
   });
 }
 
@@ -50,11 +51,14 @@ export async function replyToMessage(id: string, text: string): Promise<ActionRe
     const who = officeOf(user);
     const content = await getSiteContent();
     const replyTo = content.email || process.env.SECRETARIAT_EMAIL || undefined;
-    await sendEmail(m.email, `Re: ${m.route} — ACCPHE`, `Dear ${m.name},\n\n${body}\n\n${user.name}\n${who}, ACCPHE\n\n— Your message —\n${m.body.slice(0, 2000)}`, undefined, { replyTo });
+    const status = await sendEmail(m.email, `Re: ${m.route} — ACCPHE`, `Dear ${m.name},\n\n${body}\n\n${user.name}\n${who}, ACCPHE\n\n— Your message —\n${m.body.slice(0, 2000)}`, undefined, { replyTo });
+    // A reply that could not be delivered is not recorded as sent; the text stays in the box to try again.
+    if (status === "invalid") return fail(`The reply could not be sent: ${m.email} is not a valid email address.`);
+    if (status === "failed") return fail("The reply could not be delivered by the email service. Please try again later.");
     await db.insert(messageReplies).values({ messageId: id, body, who: `${user.name}, ${who}`, userId: user.id });
     await db.update(messages).set({ read: true }).where(eq(messages.id, id));
-    await audit({ actorId: user.id, who, action: "message.reply", entityType: "message", entityId: id, summary: `Reply sent to ${m.name} (${m.route})` });
+    await audit({ actorId: user.id, who, action: "message.reply", entityType: "message", entityId: id, summary: `Reply ${status === "sent" ? "sent" : "recorded"} to ${m.name} (${m.route})` });
     refresh();
-    return ok(`Reply sent to ${m.email}`);
+    return ok(status === "sent" ? `Reply sent to ${m.email}` : `Reply recorded. Email delivery is off, so it was not emailed — contact ${m.email} directly.`);
   });
 }

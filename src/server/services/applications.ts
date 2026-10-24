@@ -89,11 +89,21 @@ export async function uniqueProgramSlug(title: string, provider: string, exceptI
   return `${base}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
+/** Atomically take the decision slot, so two simultaneous "record decision" clicks cannot both succeed. */
+async function claimDecision(appId: string, decision: string) {
+  const claimed = await db
+    .update(applications)
+    .set({ decision, updatedAt: new Date() })
+    .where(and(eq(applications.id, appId), eq(applications.decision, "")))
+    .returning({ id: applications.id });
+  if (!claimed.length) throw new UserError("A decision has already been recorded for this application.");
+}
+
 /** Program decisions: a draft program record (with its verification number) is created for verification. */
 async function recordProgramDecision(app: Application, decision: ProgramAward | "Declined", actor: Actor) {
   const t = new Date();
+  await claimDecision(app.id, decision);
   if (decision === "Declined") {
-    await db.update(applications).set({ decision, updatedAt: t }).where(eq(applications.id, app.id));
     await addNote(app.id, "system", "Program application declined by the authorized body.", actor);
     return null;
   }
@@ -117,7 +127,7 @@ async function recordProgramDecision(app: Application, decision: ProgramAward | 
       applicationId: app.id,
     })
     .returning();
-  await db.update(applications).set({ decision, stage: TRACKS.program.decisionStage + 1, updatedAt: t }).where(eq(applications.id, app.id));
+  await db.update(applications).set({ stage: TRACKS.program.decisionStage + 1, updatedAt: t }).where(eq(applications.id, app.id));
   await addNote(app.id, "system", `Decision recorded: ${decision}. A draft program record (${rec.verification}) was created for verification.`, actor);
   return rec;
 }
@@ -133,8 +143,8 @@ export async function recordDecision(app: Application, decision: string, actor: 
 
 async function recordInstitutionDecision(app: Application, decision: Classification | "Declined", actor: Actor) {
   const t = new Date();
+  await claimDecision(app.id, decision);
   if (decision === "Declined") {
-    await db.update(applications).set({ decision, updatedAt: t }).where(eq(applications.id, app.id));
     await addNote(app.id, "system", "Application declined by the authorized body.", actor);
     return null;
   }
@@ -155,7 +165,7 @@ async function recordInstitutionDecision(app: Application, decision: Classificat
       applicationId: app.id,
     })
     .returning();
-  await db.update(applications).set({ decision, stage: trackOf(app).decisionStage + 1, updatedAt: t }).where(eq(applications.id, app.id));
+  await db.update(applications).set({ stage: trackOf(app).decisionStage + 1, updatedAt: t }).where(eq(applications.id, app.id));
   await addNote(app.id, "system", `Decision recorded: ${decision}. A draft directory record was created for verification.`, actor);
   return rec;
 }

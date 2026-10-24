@@ -33,6 +33,20 @@ export async function notifyAssigned(userId: string | null | undefined, mail: Ma
   if (u && u.status === "active" && u.notifyAssign) await trySendEmail(u.email, mail.subject, `Hello ${u.name},\n\n${mail.text}`, cta(mail));
 }
 
+/**
+ * Alert the officer responsible for an application. Falls back to everyone in the Applications module when no
+ * officer is assigned, or the assigned person can no longer act on it (suspended, moved to another role, or opted out
+ * of assignment emails) — so an institution's upload or message never reaches nobody.
+ */
+export async function notifyOfficer(officerId: string | null | undefined, mail: Mail) {
+  const [u] = officerId ? await db.select().from(users).where(eq(users.id, officerId)) : [];
+  if (u && u.status === "active" && ROLE_INFO[u.role].modules.includes("applications") && u.notifyAssign) {
+    await trySendEmail(u.email, mail.subject, `Hello ${u.name},\n\n${mail.text}`, cta(mail));
+    return;
+  }
+  await notifyModule("applications", mail, { secretariat: false });
+}
+
 /** Something a person follows changed status. */
 export async function notifyStatus(userIds: (string | null | undefined)[], mail: Mail) {
   const ids = [...new Set(userIds.filter((x): x is string => !!x))];
@@ -46,7 +60,7 @@ export async function notifyStatus(userIds: (string | null | undefined)[], mail:
  * preference; direct messages are always sent). Without a portal account, direct messages go to the representative
  * email given in the inquiry so that nothing sent "to the institution" is lost.
  */
-export async function notifyInstitution(app: { id: string; repEmail: string; repName: string }, mail: Mail, kind: "message" | "status") {
+export async function notifyInstitution(app: { id: string; repEmail: string; repName: string }, mail: Mail, kind: "message" | "status"): Promise<number> {
   const linked = await db
     .select()
     .from(users)
@@ -54,9 +68,11 @@ export async function notifyInstitution(app: { id: string; repEmail: string; rep
   const recipients = linked.filter((u) => kind === "message" || u.notifyStatus);
   if (recipients.length) {
     for (const u of recipients) await trySendEmail(u.email, mail.subject, `Hello ${u.name},\n\n${mail.text}`, cta({ ...mail, link: mail.link ?? "/portal/my-application" }));
-    return;
+    return recipients.length;
   }
   if (!linked.length && app.repEmail) {
-    await trySendEmail(app.repEmail, mail.subject, `Dear ${app.repName || "colleague"},\n\n${mail.text}`);
+    const status = await trySendEmail(app.repEmail, mail.subject, `Dear ${app.repName || "colleague"},\n\n${mail.text}`);
+    return status === "invalid" ? 0 : 1;
   }
+  return 0;
 }

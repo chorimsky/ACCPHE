@@ -53,6 +53,11 @@ export async function approveUser(id: string, applicationId: string | null): Pro
   });
 }
 
+/** Unassign someone who can no longer act on applications (suspended, or moved to another role). */
+async function releaseApplications(userId: string) {
+  await db.update(applications).set({ officerId: null, updatedAt: new Date() }).where(eq(applications.officerId, userId));
+}
+
 export async function setUserStatus(id: string, status: "active" | "suspended"): Promise<ActionResult> {
   return attempt(async () => {
     const { user, who } = await admin();
@@ -62,7 +67,10 @@ export async function setUserStatus(id: string, status: "active" | "suspended"):
     if (status === "active" && u.role === "institution" && !u.applicationId) return fail("Link the representative to an application before reactivating.");
     const declined = u.status === "pending" && status === "suspended";
     await db.update(users).set({ status, reviewedBy: user.id, reviewedAt: new Date(), updatedAt: new Date() }).where(eq(users.id, id));
-    if (status === "suspended") await revokeUserSessions(id);
+    if (status === "suspended") {
+      await revokeUserSessions(id);
+      await releaseApplications(id);
+    }
     const verb = status === "active" ? "reactivated" : declined ? "declined" : "suspended";
     await audit({ actorId: user.id, who, action: `user.${verb}`, entityType: "user", entityId: id, summary: `Account ${verb}: ${u.name}` });
     if (declined) {
@@ -132,6 +140,7 @@ export async function setUserRole(id: string, role: string): Promise<ActionResul
     if (u.role === "institution" || role === "institution") return fail("Institution representatives keep their own account type; create a new account instead.");
     await db.update(users).set({ role: role as (typeof ROLES)[number], updatedAt: new Date() }).where(eq(users.id, id));
     await revokeUserSessions(id);
+    if (!ROLE_INFO[role as (typeof ROLES)[number]].modules.includes("applications")) await releaseApplications(id);
     await audit({ actorId: user.id, who, action: "user.role", entityType: "user", entityId: id, summary: `${u.name}: role changed from ${ROLE_INFO[u.role].label} to ${ROLE_INFO[role as (typeof ROLES)[number]].label}` });
     refresh();
     return ok(`${u.name} is now ${ROLE_INFO[role as (typeof ROLES)[number]].label}`);

@@ -16,13 +16,13 @@ export default async function NewCasePage({ searchParams }: { searchParams: Prom
   const initial = m
     ? { type: "Complaint", subject: `${m.route} — ${m.name}`, institution: "", party: `${m.name}${m.org ? `, ${m.org}` : ""}`, partyEmail: m.email, details: m.body }
     : { type: "Complaint", subject: "", institution: "", party: "", partyEmail: "", details: "" };
-  const apps = await db.select({ id: applications.id, ref: applications.ref, name: applications.name }).from(applications).orderBy(asc(applications.ref));
+  const apps = await db.select({ id: applications.id, ref: applications.ref, name: applications.name, kind: applications.kind, programTitle: applications.programTitle }).from(applications).orderBy(asc(applications.ref));
   return (
     <>
       <ModuleHeader mod="cases" />
       <ModuleBody>
         <Back href="/portal/cases">All cases</Back>
-        <CaseForm initial={initial} applications={apps.map((a) => ({ value: a.id, label: `${a.ref} — ${a.name}` }))} />
+        <CaseForm initial={initial} fromMessage={m?.id} applications={apps.map((a) => ({ value: a.id, label: a.kind === "program" ? `${a.ref} — ${a.programTitle} (${a.name})` : `${a.ref} — ${a.name}` }))} />
       </ModuleBody>
     </>
   );

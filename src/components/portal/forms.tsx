@@ -25,6 +25,14 @@ const Opt = ({ list }: { list: readonly string[] }) => (
   </>
 );
 
+/**
+ * Pressing Enter in a text field submits the form with its first submit button. Placed first, this invisible button
+ * makes Enter keep the current state ("save" / the article's current status) instead of triggering "publish".
+ */
+const EnterKeeps = ({ value }: { value: string }) => (
+  <button type="submit" name="intent" value={value} tabIndex={-1} aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden" />
+);
+
 /* ─────────── Applications ─────────── */
 
 /** Program categories offered as suggestions (the published list of eligible programs). */
@@ -117,6 +125,7 @@ export function RecordForm({ record, deleteSlot }: { record: RecordDraft; delete
             <h2 className="m-0 text-navy" style={{ font: "500 22px var(--font-serif)" }}>
               {record.id ? "Edit directory record" : "New directory record"}
             </h2>
+            <EnterKeeps value="save" />
             {record.id && <input type="hidden" name="id" value={record.id} />}
             <div className="grid gap-[18px]" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,240px),1fr))" }}>
               <label className="p-label col-span-full">
@@ -254,6 +263,7 @@ export function ProgramRecordForm({ record, deleteSlot }: { record: ProgramRecor
               </h2>
               <span className="p-meta">{record.verification ? `Verification no. ${record.verification}` : "A verification number is issued when the record is saved"}</span>
             </div>
+            <EnterKeeps value="save" />
             {record.id && <input type="hidden" name="id" value={record.id} />}
             <div className="grid gap-[18px]" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,240px),1fr))" }}>
               <label className="p-label col-span-full">
@@ -384,6 +394,7 @@ export function ArticleForm({ article, deleteSlot }: { article: ArticleDraft; de
     <PortalForm action={saveArticle} className="flex flex-wrap items-start gap-6">
       {(pending) => (
         <>
+          <EnterKeeps value={published ? "publish" : "draft"} />
           {article.id && <input type="hidden" name="id" value={article.id} />}
           <section className="p-card flex min-w-0 flex-[2_1_540px] flex-col gap-[18px]">
             <input
@@ -479,11 +490,21 @@ export function ArticleForm({ article, deleteSlot }: { article: ArticleDraft; de
 
 /* ─────────── Cases ─────────── */
 
-export function CaseForm({ initial, applications }: { initial: { type: string; subject: string; institution: string; party: string; partyEmail: string; details: string }; applications: { value: string; label: string }[] }) {
+export function CaseForm({
+  initial,
+  applications,
+  fromMessage,
+}: {
+  initial: { type: string; subject: string; institution: string; party: string; partyEmail: string; details: string };
+  applications: { value: string; label: string }[];
+  /** The website message this case is logged from (it is linked and archived). */
+  fromMessage?: string;
+}) {
   return (
     <PortalForm action={createCase} className="p-card flex max-w-[820px] flex-col gap-5">
       {(pending) => (
         <>
+          {fromMessage && <input type="hidden" name="fromMessage" value={fromMessage} />}
           <h2 className="m-0 text-navy" style={{ font: "500 22px var(--font-serif)" }}>
             Log a complaint or appeal
           </h2>

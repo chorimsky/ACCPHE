@@ -10,6 +10,7 @@ import { trySendEmail } from "@/server/email";
 const MODULE_OF: Record<string, ModuleKey> = {
   application: "applications",
   record: "directory",
+  program: "directory",
   article: "news",
   case: "cases",
   message: "messages",

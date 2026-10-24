@@ -164,7 +164,7 @@ export default async function MyApplicationPage() {
             {decided && (
               <section className="flex flex-col gap-3.5 rounded border border-line bg-white p-6">
                 <div className="flex flex-col gap-1">
-                  <h3 className="p-h3">Maintaining accreditation</h3>
+                  <h3 className="p-h3">{program ? "Ongoing quality assurance" : "Maintaining accreditation"}</h3>
                   <span className="text-muted" style={{ font: "400 13.5px/1.55 var(--font-sans)" }}>
                     {program
                       ? "Submit periodic reports and disclose substantive changes to the approved program. Submissions are recorded and reviewed by the Secretariat."

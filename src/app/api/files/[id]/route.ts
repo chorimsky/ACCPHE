@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { applications, files, reviews } from "@/db/schema";
 import { awaitingDecision, canAccess } from "@/lib/domain";
 import { audit } from "@/server/audit";
-import { currentUser, officeOf } from "@/server/auth";
+import { currentUser, mfaSetupPending, officeOf } from "@/server/auth";
 import { getFileStream, INLINE_MIME } from "@/server/storage";
 
 /**
@@ -13,6 +13,7 @@ import { getFileStream, INLINE_MIME } from "@/server/storage";
  */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await currentUser();
+  if (user && mfaSetupPending(user)) return new Response("Set up two-step verification first.", { status: 403 });
   if (!user) return new Response("Sign in to the portal to download this document.", { status: 401 });
   const { id } = await params;
   const [f] = await db.select().from(files).where(eq(files.id, id));

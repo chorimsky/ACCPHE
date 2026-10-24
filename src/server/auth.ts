@@ -35,6 +35,8 @@ export function passwordProblem(pw: string): string | null {
 
 /** Staff, reviewers and Commission members must use two-step verification when REQUIRE_STAFF_MFA is on. */
 export const mfaRequiredFor = (role: Role) => process.env.REQUIRE_STAFF_MFA === "1" && role !== "institution";
+/** A user who must set up two-step verification first may only use Account settings. */
+export const mfaSetupPending = (user: Pick<User, "role" | "mfaEnabled">) => mfaRequiredFor(user.role) && !user.mfaEnabled;
 
 /* ─────────── Sessions ─────────── */
 
@@ -145,6 +147,8 @@ export async function authorize(mod: ModuleKey): Promise<User> {
   const user = await currentUser();
   if (!user) throw new UserError("Your session has ended. Sign in again to continue.");
   if (!canAccess(user.role, mod)) throw new UserError("You do not have access to this module.");
+  // Enforced here as well as in the portal layout, so actions cannot be called directly to bypass it.
+  if (mod !== "account" && mfaSetupPending(user)) throw new UserError("Set up two-step verification in Account settings to continue.");
   return user;
 }
 

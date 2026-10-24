@@ -131,6 +131,7 @@ export async function toggleProgramPublish(id: string): Promise<ActionResult> {
     const user = await authorize("directory");
     const [r] = await db.select().from(programRecords).where(eq(programRecords.id, id));
     if (!r) return fail("This record no longer exists.");
+    if (r.status !== "Published" && r.status !== "Draft") return fail(`This record is ${r.status}. Open it to change its status.`);
     if (r.status !== "Published" && !r.verified) return fail("Open the record and confirm verification of the formal decision, then publish.");
     if (r.status !== "Published" && (!r.effective || !r.review)) return fail("Open the record and add the effective date and validity end date, then publish.");
     const ns = r.status === "Published" ? "Draft" : "Published";

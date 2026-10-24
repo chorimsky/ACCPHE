@@ -97,12 +97,12 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
         <a href="/portal/export/applications" className="p-btn-secondary">
           Export CSV
         </a>
-        <Link href="/portal/applications/new" className="p-btn">
-          + Log an inquiry
+        <Link href={program ? "/portal/applications/new?kind=program" : "/portal/applications/new"} className="p-btn">
+          {program ? "+ Log a program application" : "+ Log an inquiry"}
         </Link>
       </ModuleHeader>
       <ModuleBody>
-        <Back href="/portal/applications">All applications</Back>
+        <Back href={program ? "/portal/applications?kind=program" : "/portal/applications"}>{program ? "All program applications" : "All applications"}</Back>
         <Card className="gap-[22px]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-col gap-1.5">

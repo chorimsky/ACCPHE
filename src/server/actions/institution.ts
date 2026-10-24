@@ -5,10 +5,10 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { applications, complianceSubmissions, COMPLIANCE_TYPES, files, requirements } from "@/db/schema";
 import { attempt, fail, ok, UserError, type ActionResult } from "@/lib/action";
-import { trackOf } from "@/lib/domain";
+import { appTitle, trackOf } from "@/lib/domain";
 import { audit } from "@/server/audit";
 import { authorize } from "@/server/auth";
-import { notifyAssigned, notifyModule } from "@/server/notify";
+import { notifyOfficer } from "@/server/notify";
 import { addNote } from "@/server/services/applications";
 import { putFile } from "@/server/storage";
 
@@ -23,11 +23,11 @@ async function own() {
   return { user, app, actor: { id: user.id, who: app.name } };
 }
 
-const alertStaff = async (app: { id: string; officerId: string | null; name: string; ref: string }, subject: string, text: string) => {
-  const mail = { subject, text, link: `/portal/applications/${app.id}` };
-  if (app.officerId) await notifyAssigned(app.officerId, mail);
-  else await notifyModule("applications", mail, { secretariat: false });
-};
+/** "Provider — Program" for programs, the institution otherwise. */
+const who = (app: { kind: "institution" | "program"; name: string; programTitle: string }) => (app.kind === "program" ? `${app.name} — ${app.programTitle}` : app.name);
+
+/** Officer (or the Applications team if no one can act on it), naming the program for program applications. */
+const alertStaff = (app: { id: string; officerId: string | null }, subject: string, text: string) => notifyOfficer(app.officerId, { subject, text, link: `/portal/applications/${app.id}` });
 
 export async function uploadDocument(reqId: string, fd: FormData): Promise<ActionResult> {
   return attempt(async () => {
@@ -42,7 +42,7 @@ export async function uploadDocument(reqId: string, fd: FormData): Promise<Actio
     await db.update(requirements).set({ status: "Submitted", updatedAt: new Date() }).where(eq(requirements.id, req.id));
     await addNote(app.id, "institution", `Uploaded “${s.fileName}” for ${req.name}.`, actor);
     await audit({ actorId: user.id, who: app.name, action: "document.upload", entityType: "application", entityId: app.id, summary: `${app.name} uploaded ${s.fileName}` });
-    await alertStaff(app, `Document submitted: ${app.name}`, `${app.name} (${app.ref}) uploaded “${s.fileName}” for ${req.name}. Review it and mark it received.`);
+    await alertStaff(app, `Document submitted: ${appTitle(app)}`, `${who(app)} (${app.ref}) uploaded “${s.fileName}” for ${req.name}. Review it and mark it received.`);
     refresh();
     return ok("Document submitted for review");
   });
@@ -56,7 +56,7 @@ export async function sendInstitutionMessage(text: string): Promise<ActionResult
     if (t.length > 8000) return fail("The message is too long.");
     await addNote(app.id, "institution", t, actor);
     await audit({ actorId: user.id, who: app.name, action: "application.message", entityType: "application", entityId: app.id, summary: `Message from ${app.name}` });
-    await alertStaff(app, `Message from ${app.name} (${app.ref})`, `${user.name} wrote:\n\n${t.slice(0, 1500)}`);
+    await alertStaff(app, `Message from ${appTitle(app)} (${app.ref})`, `${user.name} (${who(app)}) wrote:\n\n${t.slice(0, 1500)}`);
     refresh();
     return ok("Message sent to the Secretariat");
   });
@@ -73,7 +73,7 @@ export async function submitCompliance(type: string, text: string): Promise<Acti
     await db.insert(complianceSubmissions).values({ applicationId: app.id, type: kind, text: t.slice(0, 10_000), userId: user.id });
     await addNote(app.id, "institution", `${kind} submitted: ${t.slice(0, 2000)}`, actor);
     await audit({ actorId: user.id, who: app.name, action: "compliance.submit", entityType: "application", entityId: app.id, summary: `${kind} received from ${app.name}` });
-    await alertStaff(app, `${kind}: ${app.name}`, `${app.name} (${app.ref}) submitted a ${kind.toLowerCase()}:\n\n${t.slice(0, 1500)}`);
+    await alertStaff(app, `${kind}: ${appTitle(app)}`, `${who(app)} (${app.ref}) submitted a ${kind.toLowerCase()}:\n\n${t.slice(0, 1500)}`);
     refresh();
     return ok(`${kind} submitted`);
   });

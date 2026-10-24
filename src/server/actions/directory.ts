@@ -106,6 +106,7 @@ export async function togglePublish(id: string): Promise<ActionResult> {
     const user = await authorize("directory");
     const [r] = await db.select().from(records).where(eq(records.id, id));
     if (!r) return fail("This record no longer exists.");
+    if (r.status !== "Published" && r.status !== "Draft") return fail(`This record is ${r.status}. Open it to change its status.`);
     if (r.status !== "Published" && !r.verified) return fail("Open the record and confirm verification of the formal decision, then publish.");
     if (r.status !== "Published" && !r.effective) return fail("Open the record and add an effective date, then publish.");
     const ns = r.status === "Published" ? "Draft" : "Published";
@@ -115,6 +116,10 @@ export async function togglePublish(id: string): Promise<ActionResult> {
       .where(eq(records.id, id));
     await logRecordEvent(id, r, { ...r, status: ns });
     await audit({ actorId: user.id, who: officeOf(user), action: "record.publish", entityType: "record", entityId: id, summary: `${r.name} ${ns === "Published" ? "published to the directory" : "removed from the public directory"}` });
+    if (ns === "Published" && r.applicationId) {
+      const [app] = await db.select().from(applications).where(eq(applications.id, r.applicationId));
+      if (app) await notifyInstitution(app, { subject: `${app.ref}: directory record published`, text: `The official directory record for ${app.name} is now published.` }, "status");
+    }
     refresh();
     return ok(ns === "Published" ? "Published to the public directory" : "Removed from the public directory");
   });

@@ -90,7 +90,7 @@ test.describe.serial("content management", () => {
     await page.getByRole("link", { name: /Sample Correspondent/ }).click();
     await page.getByPlaceholder(/Reply to Sample Correspondent/).fill("The institution you named does not appear in the directory.");
     await page.getByRole("button", { name: "Send reply" }).click();
-    await toast(page, "Reply sent to liaison@example.org");
+    await toast(page, "Reply recorded. Email delivery is off, so it was not emailed — contact liaison@example.org directly.");
     await expect(page.getByText("The institution you named does not appear in the directory.")).toBeVisible();
   });
 

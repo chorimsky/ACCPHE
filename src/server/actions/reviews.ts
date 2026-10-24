@@ -8,7 +8,7 @@ import { attempt, fail, ok, type ActionResult } from "@/lib/action";
 import { appTitle, RATING_LABELS, trackOf } from "@/lib/domain";
 import { audit } from "@/server/audit";
 import { authorize } from "@/server/auth";
-import { notifyAssigned } from "@/server/notify";
+import { notifyOfficer } from "@/server/notify";
 import { addNote } from "@/server/services/applications";
 
 const refresh = () => revalidatePath("/portal", "layout");
@@ -28,6 +28,7 @@ async function editable(reviewId: string) {
   if (ctx.rv.conflictDeclaredAt) throw new Error("conflict");
   if (!ctx.rv.coiConfirmedAt) throw new Error("coi");
   if (ctx.rv.submittedAt) throw new Error("submitted");
+  if (ctx.app?.decision) throw new Error("decided");
   return ctx;
 }
 
@@ -35,6 +36,8 @@ const explain = (e: unknown) =>
   fail(
     e instanceof Error && e.message === "submitted"
       ? "This report has been submitted and can no longer be edited."
+      : e instanceof Error && e.message === "decided"
+        ? "A decision has already been recorded for this application; the review is closed."
       : e instanceof Error && e.message === "coi"
         ? "Confirm the conflict-of-interest declaration first."
         : e instanceof Error && e.message === "conflict"
@@ -66,8 +69,8 @@ export async function declareConflict(reviewId: string): Promise<ActionResult> {
       if (rv.submittedAt) return fail("This report has already been submitted.");
       await db.update(reviews).set({ conflictDeclaredAt: new Date(), updatedAt: new Date() }).where(eq(reviews.id, reviewId));
       await addNote(rv.applicationId, "staff", `${user.name} declared a conflict of interest and withdrew. Reassignment required.`, { id: user.id, who: user.name });
-      await audit({ actorId: user.id, who: user.name, action: "review.conflict", entityType: "application", entityId: rv.applicationId, summary: `${user.name} declared a conflict on ${app?.name}` });
-      if (app?.officerId) await notifyAssigned(app.officerId, { subject: `Reviewer conflict: ${app.name}`, text: `${user.name} declared a conflict of interest and withdrew from the review of ${app.name} (${app.ref}). A replacement reviewer is required.`, link: `/portal/applications/${app.id}` });
+      await audit({ actorId: user.id, who: user.name, action: "review.conflict", entityType: "application", entityId: rv.applicationId, summary: `${user.name} declared a conflict on ${app ? appTitle(app) : "an application"}` });
+      if (app) await notifyOfficer(app.officerId, { subject: `Reviewer conflict: ${appTitle(app)}`, text: `${user.name} declared a conflict of interest and withdrew from the review of ${appTitle(app)} (${app.ref}). A replacement reviewer is required.`, link: `/portal/applications/${app.id}` });
       refresh();
       return ok("Conflict declared — the Secretariat will reassign this review");
     } catch (e) {
@@ -132,7 +135,7 @@ export async function submitReview(reviewId: string): Promise<ActionResult> {
       const counts = `${c("met")} ${RATING_LABELS.met.toLowerCase()}, ${c("partial")} ${RATING_LABELS.partial.toLowerCase()}, ${c("not")} ${RATING_LABELS.not.toLowerCase()}`;
       await addNote(app.id, "system", `Independent review report submitted by ${user.name} (${counts}).`, { id: user.id, who: user.name });
       await audit({ actorId: user.id, who: user.name, action: "review.submit", entityType: "application", entityId: app.id, summary: `Review report submitted for ${appTitle(app)}` });
-      if (app.officerId) await notifyAssigned(app.officerId, { subject: `Review report submitted: ${appTitle(app)}`, text: `${user.name} submitted the independent review report for ${appTitle(app)} (${app.ref}): ${counts}.`, link: `/portal/applications/${app.id}` });
+      await notifyOfficer(app.officerId, { subject: `Review report submitted: ${appTitle(app)}`, text: `${user.name} submitted the independent review report for ${appTitle(app)} (${app.ref}): ${counts}.`, link: `/portal/applications/${app.id}` });
       refresh();
       return ok("Review report submitted to the Secretariat");
     } catch (e) {

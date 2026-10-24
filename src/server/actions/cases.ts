@@ -2,15 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { applications, CASE_TYPES, caseNotes, cases } from "@/db/schema";
+import { applications, CASE_TYPES, caseNotes, cases, messages } from "@/db/schema";
 import { trySendEmail } from "@/server/email";
 import { attempt, fail, ok, parseForm, zs, type ActionResult, type ActionState } from "@/lib/action";
 import { CASE_CLOSED, CASE_STAGES } from "@/lib/domain";
 import { audit } from "@/server/audit";
 import { authorize, officeOf } from "@/server/auth";
+import { canAccess } from "@/lib/domain";
 import { nextCaseRef } from "@/server/sequence";
 
 const refresh = () => revalidatePath("/portal", "layout");
@@ -30,6 +31,7 @@ const schema = z.object({
     .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Enter a valid email for the person who submitted the case."),
   applicationId: zs.opt(64),
   details: zs.text("Details", 10_000),
+  fromMessage: zs.opt(64),
 });
 
 export async function createCase(_prev: ActionState, fd: FormData): Promise<ActionState> {
@@ -43,8 +45,10 @@ export async function createCase(_prev: ActionState, fd: FormData): Promise<Acti
       const [a] = await db.select({ id: applications.id }).from(applications).where(eq(applications.id, d.applicationId));
       if (!a) return fail("Choose a valid application.");
     }
+    const { fromMessage, ...fields } = d;
+    const [msg] = fromMessage && canAccess(user.role, "messages") ? await db.select().from(messages).where(and(eq(messages.id, fromMessage), isNull(messages.archivedAt))) : [];
     const ref = await nextCaseRef(d.type);
-    const [c] = await db.insert(cases).values({ ...d, applicationId: d.applicationId || null, ref }).returning();
+    const [c] = await db.insert(cases).values({ ...fields, applicationId: d.applicationId || null, ref }).returning();
     if (c.partyEmail) {
       await trySendEmail(
         c.partyEmail,
@@ -52,7 +56,8 @@ export async function createCase(_prev: ActionState, fd: FormData): Promise<Acti
         `Your ${d.type.toLowerCase()} concerning “${d.subject}” has been received by the ACCPHE Standards & Ethics Committee under the reference ${ref}.\n\nThe Committee first assesses whether the matter falls within its jurisdiction and whether sufficient information exists to warrant further review. Where appropriate, the institution or individual concerned is given a fair opportunity to respond. You will be informed of the determination.`,
       );
     }
-    await db.insert(caseNotes).values({ caseId: c.id, who, userId: user.id, text: `${d.type} logged.` });
+    await db.insert(caseNotes).values({ caseId: c.id, who, userId: user.id, text: msg ? `${d.type} logged from a website message from ${msg.name} <${msg.email}> (${msg.route}).` : `${d.type} logged.` });
+    if (msg) await db.update(messages).set({ read: true, archivedAt: new Date() }).where(eq(messages.id, msg.id));
     await audit({ actorId: user.id, who, action: "case.create", entityType: "case", entityId: c.id, summary: `${d.type} logged: ${ref}` });
     return ok(`${d.type} logged as ${ref}`, { id: c.id });
   });

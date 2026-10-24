@@ -79,3 +79,14 @@ Every requirement in the client brief (`Website content and ideas.txt`) and the 
 | Step 5 — Certification and public verification; "unique program verification number"; "inclusion in the public directory of approved programs" | Draft program record with `ACCPHE-P-YYYY-NNNN`; publication requires verification + effective date + validity end; `/directory/programs` with verification-number lookup; record page with status history | E2E `programs.spec` 5–6 |
 | Step 6 — Ongoing quality assurance | Final step; provider submits reports/substantive changes from the portal; renewal due ≤ 90 days and drafts flagged on the Overview | E2E `programs.spec` 7 |
 | "Accreditation applies exclusively to the approved program" | Stated on the record page, directory, decision email, provider portal, and application disclosure | — |
+
+## 7. Forms and workflows covered end to end
+
+`tests/e2e/workflows.spec.ts` exercises the remaining forms and workflows against a production build:
+accounts (invitation, one-time password links, profile, password change, two-step verification set-up / sign-in /
+administrator reset, role change, suspension and reactivation, forgotten password), complaints and appeals (logging,
+stages, notes, determination, appeal linked to a program application), website messages (inbox, mark unread, log as
+complaint — linked and archived — archive), staff application tools (staff-logged inquiry, filing documents,
+document status, stage return, appointing and removing reviewers), reviewer conflict of interest, Commission recusal,
+declining a program application, a program provider's portal, news (publish, unpublish, delete), and manual
+institution and program records (Enter saves and never publishes).

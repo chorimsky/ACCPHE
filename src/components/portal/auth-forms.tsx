@@ -125,7 +125,7 @@ export function RegisterForm({ initialRef }: { initialRef: string }) {
         <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,150px),1fr))" }}>
           {(
             [
-              ["institution", "Institution representative", "Track an application"],
+              ["institution", "Institution or provider", "Track an application"],
               ["reviewer", "Reviewer", "Serve on review teams"],
             ] as const
           ).map(([k, label, desc]) => (
@@ -168,7 +168,7 @@ export function RegisterForm({ initialRef }: { initialRef: string }) {
                 <input name="ref" defaultValue={initialRef} placeholder="ACC-2026-0000" maxLength={40} className="p-input" style={{ height: 46 }} aria-describedby="ref-hint" />
               </label>
               <span id="ref-hint" className="text-muted" style={{ font: "400 12.5px/1.5 var(--font-sans)" }}>
-                If you have already submitted an inquiry, enter its reference to link your account.
+                If you have already submitted an inquiry (ACC-…) or a program application (PRG-…), enter its reference to link your account.
               </span>
             </div>
           </>

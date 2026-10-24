@@ -36,7 +36,13 @@ export class UserError extends Error {}
 /** zod helpers for FormData strings. */
 export const zs = {
   text: (label: string, max = 5000) => z.string({ error: `${label} is required.` }).trim().min(1, `${label} is required.`).max(max, `${label} is too long.`),
-  opt: (max = 5000) => z.string().trim().max(max).optional().transform((v) => v ?? ""),
+  opt: (max = 5000, label = "One of the fields") =>
+    z
+      .string()
+      .trim()
+      .max(max, `${label} is too long (at most ${max} characters).`)
+      .optional()
+      .transform((v) => v ?? ""),
   email: (label = "Email") => z.string({ error: `${label} is required.` }).trim().toLowerCase().email(`Enter a valid ${label.toLowerCase()}.`).max(200),
   date: () =>
     z

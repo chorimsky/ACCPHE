@@ -22,9 +22,12 @@ function forOutbox<T extends { text: string; html: string }>(m: T): T {
   return { ...m, text: "[not delivered: email delivery is off]", html: "[not delivered]" };
 }
 
+/** "sent" (delivered to Resend), "logged" (email delivery off: recorded only), "failed", or "invalid" address. */
+export type EmailStatus = "sent" | "logged" | "failed" | "invalid";
+
 /** Send a transactional email. Always recorded in email_outbox; delivered through Resend when configured. */
-export async function sendEmail(to: string, rawSubject: string, text: string, cta?: Cta, opts: { replyTo?: string } = {}) {
-  if (!validAddress(to)) return;
+export async function sendEmail(to: string, rawSubject: string, text: string, cta?: Cta, opts: { replyTo?: string } = {}): Promise<EmailStatus> {
+  if (!validAddress(to)) return "invalid";
   const subject = rawSubject.replace(/[\r\n\t]+/g, " ").slice(0, 200);
   const body = cta ? `${text}\n\n${cta.label}: ${cta.url}` : text;
   const html = renderHtml(subject, text, cta);
@@ -34,7 +37,7 @@ export async function sendEmail(to: string, rawSubject: string, text: string, ct
   if (!key) {
     await db.update(emailOutbox).set({ status: "logged" }).where(eq(emailOutbox.id, row.id));
     if (process.env.NODE_ENV !== "production") console.info(`[email] → ${to}: ${subject}`);
-    return;
+    return "logged";
   }
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -45,18 +48,21 @@ export async function sendEmail(to: string, rawSubject: string, text: string, ct
     });
     if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
     await db.update(emailOutbox).set({ status: "sent" }).where(eq(emailOutbox.id, row.id));
+    return "sent";
   } catch (err) {
     console.error(JSON.stringify({ level: "error", source: "email", outboxId: row.id, error: String(err).slice(0, 500) }));
     await db.update(emailOutbox).set({ status: "failed", error: String(err).slice(0, 1000) }).where(eq(emailOutbox.id, row.id));
+    return "failed";
   }
 }
 
 /** Fire-and-forget wrapper: an email failure must never undo the change that triggered it. */
-export async function trySendEmail(...args: Parameters<typeof sendEmail>) {
+export async function trySendEmail(...args: Parameters<typeof sendEmail>): Promise<EmailStatus> {
   try {
-    await sendEmail(...args);
+    return await sendEmail(...args);
   } catch (err) {
     console.error(JSON.stringify({ level: "error", source: "email", error: String(err).slice(0, 500) }));
+    return "failed";
   }
 }
 

@@ -182,10 +182,16 @@ export async function addApplicationNote(id: string, kind: "staff" | "message", 
     await addNote(id, kind, t, actor);
     if (kind === "message") {
       await audit({ actorId: user.id, who: actor.who, action: "application.message", entityType: "application", entityId: id, summary: `Message sent to ${app.name}` });
-      await notifyInstitution(app, { subject: `Message from the ACCPHE Secretariat — ${app.ref}`, text: `${t}\n\n— ${actor.who}` }, "message");
+      const reached = await notifyInstitution(app, { subject: `Message from the ACCPHE Secretariat — ${app.ref}`, text: `${t}\n\n— ${actor.who}` }, "message");
+      refresh();
+      return ok(
+        reached
+          ? `Message sent to the ${trackOf(app).party}`
+          : `Message recorded, but no email address or portal account is on file for this ${trackOf(app).party}, so nobody was notified. Add the representative’s email in the details.`,
+      );
     }
     refresh();
-    return ok(kind === "message" ? `Message sent to the ${trackOf(app).party}` : "Internal note added");
+    return ok("Internal note added");
   });
 }
 
