@@ -30,7 +30,7 @@ export default async function EditRecordPage({ params }: { params: Promise<{ id:
           )}
         </div>
         <RecordForm
-          record={{ id: r.id, name: r.name, country: r.country, cls: r.cls, effective: r.effective, review: r.review, scope: r.scope, conditions: r.conditions, status: r.status, verified: r.verified }}
+          record={{ id: r.id, name: r.name, country: r.country, website: r.website, cls: r.cls, effective: r.effective, review: r.review, scope: r.scope, conditions: r.conditions, status: r.status, verified: r.verified }}
           deleteSlot={
             r.status === "Draft" ? (
               <ActionButton action={deleteRecord.bind(null, r.id)} confirm={`Delete the directory record for ${r.name}? This cannot be undone.`} className="p-btn-danger">

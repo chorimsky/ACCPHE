@@ -287,6 +287,8 @@ export const records = sqliteTable(
     slug: text("slug").notNull(),
     name: text("name").notNull(),
     country: text("country").notNull(),
+    /** The institution's official website, linked from the public record so visitors can check it. */
+    website: text("website").notNull().default(""),
     cls: text("cls", { enum: CLASSIFICATIONS }).notNull(),
     /** YYYY-MM-DD */
     effective: text("effective").notNull().default(""),

@@ -139,6 +139,8 @@ test.describe.serial("accreditation flow", () => {
     // The application links straight to the draft record it created.
     await page.getByRole("link", { name: "Open the directory record" }).click();
     await expect(page.getByRole("heading", { name: "Edit directory record" })).toBeVisible();
+    // The website given on the inquiry is carried onto the record.
+    await expect(page.getByLabel("Official website")).toHaveValue("https://e2e.example.edu");
     // Publishing without verification is refused.
     await page.getByRole("button", { name: "Save and publish" }).click();
     await expect(alertBox(page)).toContainText("Confirm the formal decision has been verified");
@@ -152,11 +154,16 @@ test.describe.serial("accreditation flow", () => {
     await expect(page.getByRole("status")).toHaveText("1 record");
     // Newly published records also appear under "Membership developments".
     await expect(page.getByRole("region", { name: "Membership developments" }).getByRole("link", { name: INSTITUTION })).toBeVisible();
+    await expect(page.getByRole("table").getByRole("link", { name: /e2e\.example\.edu/ })).toHaveAttribute("href", "https://e2e.example.edu");
     await page.getByRole("table").getByRole("link", { name: INSTITUTION }).click();
     await expect(page.getByRole("heading", { level: 1, name: INSTITUTION })).toBeVisible();
+    const site = page.getByRole("link", { name: /e2e\.example\.edu/ });
+    await expect(site).toHaveAttribute("href", "https://e2e.example.edu");
+    await expect(site).toHaveAttribute("target", "_blank");
     await expect(page.getByText("Institutional accreditation")).toBeVisible();
     const ld = await page.locator('script[type="application/ld+json"]').allTextContents();
     expect(ld.join(" ")).toContain("EducationalOrganization");
+    expect(ld.join(" ")).toContain('"url":"https://e2e.example.edu"');
     await expect(page.getByRole("heading", { name: "Status history" })).toBeVisible();
     await expect(page.getByText("Accredited Institution — published in the directory")).toBeVisible();
   });

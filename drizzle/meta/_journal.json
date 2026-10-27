@@ -36,6 +36,13 @@
       "when": 1793113649047,
       "tag": "0004_early_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1793126726069,
+      "tag": "0005_familiar_wither",
+      "breakpoints": true
     }
   ]
 }

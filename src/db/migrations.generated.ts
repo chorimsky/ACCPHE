@@ -102,5 +102,14 @@ export const MIGRATIONS: BundledMigration[] = [
       "ALTER TABLE `applications` ADD `facebook` text DEFAULT '' NOT NULL;",
       "ALTER TABLE `applications` ADD `linkedin` text DEFAULT '' NOT NULL;"
     ]
+  },
+  {
+    "tag": "0005_familiar_wither",
+    "when": 1793126726069,
+    "hash": "23d1e8a01735d342834f04b712eb0937cae7dfc9e3f7cec801f37b87cadd1dc3",
+    "statements": [
+      "ALTER TABLE `records` ADD `website` text DEFAULT '' NOT NULL;",
+      "UPDATE `records` SET `website` = (SELECT `website` FROM `applications` WHERE `applications`.`id` = `records`.`application_id`) WHERE `application_id` IS NOT NULL AND `website` = '' AND EXISTS (SELECT 1 FROM `applications` WHERE `applications`.`id` = `records`.`application_id`);"
+    ]
   }
 ];

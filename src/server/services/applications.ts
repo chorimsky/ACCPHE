@@ -158,6 +158,7 @@ async function recordInstitutionDecision(app: Application, decision: Classificat
       slug: await uniqueRecordSlug(app.name, app.country),
       name: app.name,
       country: app.country,
+      website: app.website,
       cls: decision,
       effective,
       review,

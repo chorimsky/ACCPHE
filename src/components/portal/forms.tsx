@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ARTICLE_CATEGORIES, CASE_TYPES, CLASSIFICATIONS, PATHWAYS, PROGRAM_AWARDS, RECORD_STATUS, ROLES } from "@/db/schema";
 import { INSTITUTION_TYPES, PROGRAM_CATEGORIES, PROGRAM_DELIVERY, PROVIDER_TYPES, ROLE_INFO } from "@/lib/domain";
-import { fmtDate, fmtMonth } from "@/lib/format";
+import { fmtDate, fmtMonth, siteHost } from "@/lib/format";
 import { logInquiry, updateApplication } from "@/server/actions/applications";
 import { createCase } from "@/server/actions/cases";
 import { saveContent } from "@/server/actions/content";
@@ -111,7 +111,7 @@ export function NewInquiryForm({ kind = "institution" }: { kind?: "institution" 
 
 /* ─────────── Directory ─────────── */
 
-export type RecordDraft = { id: string; name: string; country: string; cls: string; effective: string; review: string; scope: string; conditions: string; status: string; verified: boolean };
+export type RecordDraft = { id: string; name: string; country: string; website: string; cls: string; effective: string; review: string; scope: string; conditions: string; status: string; verified: boolean };
 
 export function RecordForm({ record, deleteSlot }: { record: RecordDraft; deleteSlot?: React.ReactNode }) {
   const [r, setR] = useState(record);
@@ -135,6 +135,10 @@ export function RecordForm({ record, deleteSlot }: { record: RecordDraft; delete
               <label className="p-label">
                 <span>Country *</span>
                 <input name="country" required maxLength={100} value={r.country} onChange={set("country")} className="p-input" />
+              </label>
+              <label className="p-label">
+                <span>Official website</span>
+                <input name="website" type="url" maxLength={300} placeholder="https://" value={r.website} onChange={set("website")} className="p-input" />
               </label>
               <label className="p-label">
                 <span>Classification</span>
@@ -204,6 +208,11 @@ export function RecordForm({ record, deleteSlot }: { record: RecordDraft; delete
           <span className="text-muted" style={{ font: "400 13px var(--font-sans)" }}>
             {r.country || "—"}
           </span>
+          {r.website && (
+            <span className="break-all text-steel" style={{ font: "500 13px var(--font-sans)" }}>
+              {siteHost(r.website)} ↗
+            </span>
+          )}
           <span className="self-start border border-steel px-2.5 py-1 text-navy" style={{ font: "600 12px var(--font-sans)" }}>
             {r.cls}
           </span>

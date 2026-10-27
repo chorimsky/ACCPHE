@@ -22,6 +22,7 @@ const schema = z.object({
   id: z.string().optional(),
   name: zs.text("Institution name", 200),
   country: zs.text("Country", 100),
+  website: zs.url("Official website"),
   cls: z.enum(CLASSIFICATIONS),
   effective: zs.date(),
   review: zs.date(),
@@ -71,6 +72,7 @@ export async function saveRecord(_prev: ActionState, fd: FormData): Promise<Acti
     const values = {
       name: d.name,
       country: d.country,
+      website: d.website,
       cls: d.cls,
       effective: d.effective,
       review: d.review,

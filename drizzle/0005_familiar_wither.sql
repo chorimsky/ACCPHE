@@ -1,0 +1,2 @@
+ALTER TABLE `records` ADD `website` text DEFAULT '' NOT NULL;--> statement-breakpoint
+UPDATE `records` SET `website` = (SELECT `website` FROM `applications` WHERE `applications`.`id` = `records`.`application_id`) WHERE `application_id` IS NOT NULL AND `website` = '' AND EXISTS (SELECT 1 FROM `applications` WHERE `applications`.`id` = `records`.`application_id`);

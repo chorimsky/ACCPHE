@@ -51,5 +51,14 @@ export const zs = {
       .optional()
       .transform((v) => v ?? "")
       .refine((v) => v === "" || /^\d{4}-\d{2}-\d{2}$/.test(v), "Enter a valid date."),
+  /** Optional web address; "example.edu" becomes "https://example.edu". */
+  url: (label = "Website") =>
+    z
+      .string()
+      .trim()
+      .max(300, `${label} is too long.`)
+      .optional()
+      .transform((v) => (!v ? "" : /^https?:\/\//i.test(v) ? v : `https://${v}`))
+      .refine((v) => v === "" || /^https?:\/\/[^\s/.]+\.[^\s]+$/i.test(v), `Enter the ${label.toLowerCase()} as a full address, for example https://www.example.edu`),
   bool: () => z.union([z.literal("on"), z.literal("true"), z.literal("1"), z.literal("false"), z.literal("")]).optional().transform((v) => v === "on" || v === "true" || v === "1"),
 };

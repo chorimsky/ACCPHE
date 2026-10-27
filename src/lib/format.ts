@@ -60,3 +60,15 @@ export function reviewLine(r: { review: string; conditions: string; scope: strin
 export const daysSince = (d: Date) => (Date.now() - d.getTime()) / 864e5;
 
 export const daysFromToday = (n: number) => isoDay(new Date(Date.now() + n * 864e5));
+
+/** "https://www.example.edu/about" → "example.edu", for showing a website compactly. */
+export function siteHost(url: string) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+/** Only http(s) addresses are linked; anything else (e.g. javascript:) is never rendered as a link. */
+export const safeHref = (url: string) => (/^https?:\/\//i.test(url) ? url : "");

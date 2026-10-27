@@ -11,7 +11,7 @@ export default async function NewRecordPage() {
       <ModuleHeader mod="directory" />
       <ModuleBody>
         <Back href="/portal/directory">All records</Back>
-        <RecordForm record={{ id: "", name: "", country: "", cls: "Accredited Institution", effective: "", review: "", scope: "", conditions: "", status: "Draft", verified: false }} />
+        <RecordForm record={{ id: "", name: "", country: "", website: "", cls: "Accredited Institution", effective: "", review: "", scope: "", conditions: "", status: "Draft", verified: false }} />
       </ModuleBody>
     </>
   );

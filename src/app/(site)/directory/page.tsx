@@ -5,7 +5,7 @@ import { DirectoryFilters } from "@/components/site/directory-filters";
 import { JsonLd } from "@/components/seo/json-ld";
 import { SEO } from "@/content/site";
 import { getClasses } from "@/server/content";
-import { fmtDate, fmtMonth, plural, reviewLine } from "@/lib/format";
+import { fmtDate, fmtMonth, plural, reviewLine, safeHref, siteHost } from "@/lib/format";
 import { pageGraph, seoFor } from "@/lib/seo";
 import { publicRecords, recentDevelopments } from "@/server/queries/public";
 import type { Classification } from "@/db/schema";
@@ -103,6 +103,11 @@ export default async function DirectoryPage({ searchParams }: { searchParams: Pr
                         <Link href={`/directory/${r.slug}`} className="text-navy no-underline hover:underline" style={{ font: "600 16.5px var(--font-serif)" }}>
                           {r.name}
                         </Link>
+                        {safeHref(r.website) && (
+                          <a href={safeHref(r.website)} target="_blank" rel="noopener nofollow" className="self-start break-all" style={{ font: "500 13.5px var(--font-sans)" }}>
+                            {siteHost(r.website)} ↗<span className="sr-only"> (official website, opens in a new tab)</span>
+                          </a>
+                        )}
                         <span className="text-good" style={{ font: "600 10.5px var(--font-sans)", letterSpacing: ".12em" }}>
                           ✓ VERIFIED RECORD
                         </span>

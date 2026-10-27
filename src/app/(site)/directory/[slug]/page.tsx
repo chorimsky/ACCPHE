@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { PageHero } from "@/components/site/blocks";
 import { JsonLd } from "@/components/seo/json-ld";
 import { getClasses } from "@/server/content";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, safeHref, siteHost } from "@/lib/format";
 import { ORG_ID, pageGraph, pageMetadata } from "@/lib/seo";
 import { abs } from "@/lib/site";
 import { recordBySlug, recordHistory } from "@/server/queries/public";
@@ -21,11 +21,23 @@ export default async function RecordPage({ params }: Props) {
   const r = await recordBySlug((await params).slug);
   if (!r) notFound();
   const history = await recordHistory(r.id);
+  const website = safeHref(r.website);
   const cls = (await getClasses()).find((c) => c.t.startsWith(r.cls.split(" ")[0]));
   const changed = r.status !== "Published";
-  const rows: [string, string][] = [
+  const rows: [string, React.ReactNode][] = [
     ["Institution", r.name],
     ["Country", r.country],
+    ...(website
+      ? ([
+          [
+            "Official website",
+            <a key="web" href={website} target="_blank" rel="noopener nofollow" className="break-all">
+              {siteHost(website)}
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>,
+          ],
+        ] as [string, React.ReactNode][])
+      : []),
     ["Classification", r.cls],
     ["Status", changed ? r.status : "Current"],
     ["Effective date", fmtDate(r.effective)],
@@ -38,6 +50,7 @@ export default async function RecordPage({ params }: Props) {
     "@type": "EducationalOrganization",
     "@id": `${abs(`/directory/${r.slug}`)}#institution`,
     name: r.name,
+    ...(website ? { url: website } : {}),
     address: { "@type": "PostalAddress", addressCountry: r.country },
     ...(r.cls === "Accredited Institution" && !changed ? { hasCredential: { "@type": "EducationalOccupationalCredential", credentialCategory: "Institutional accreditation", recognizedBy: { "@id": ORG_ID } } } : {}),
     memberOf: r.cls !== "Accredited Institution" && !changed ? { "@type": "ProgramMembership", programName: `ACCPHE ${r.cls}`, hostingOrganization: { "@id": ORG_ID } } : undefined,
