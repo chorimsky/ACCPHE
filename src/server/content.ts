@@ -132,3 +132,24 @@ export async function getBenefits() {
   const [head, items] = await Promise.all([getBlock<{ title: string; tagline: string; intro: string }>("benefits.intro"), getBlock<TextItem[]>("benefits")]);
   return { ...head, items };
 }
+
+export type SocialLink = { key: "linkedin" | "facebook" | "instagram"; label: string; url: string };
+
+/** The Council's social profiles, in display order; only well-formed https addresses are returned. */
+export async function getSocial(): Promise<SocialLink[]> {
+  const v = await getBlock<Record<string, string>>("social");
+  const items: SocialLink[] = [
+    { key: "linkedin", label: "LinkedIn", url: v.linkedin ?? "" },
+    { key: "facebook", label: "Facebook", url: v.facebook ?? "" },
+    { key: "instagram", label: "Instagram", url: v.instagram ?? "" },
+  ];
+  return items
+    .map((i) => ({ ...i, url: i.url.trim().replace(/^http:\/\//i, "https://") }))
+    .filter((i) => {
+      try {
+        return new URL(i.url).protocol === "https:";
+      } catch {
+        return false;
+      }
+    });
+}

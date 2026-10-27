@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Lockup } from "@/components/brand/mark";
+import type { SocialLink } from "@/server/content";
 import { useChrome } from "./chrome";
+import { SocialLinks } from "./social";
 
 const COLS = [
   [
@@ -64,7 +66,7 @@ export function VerifyForm({ variant }: { variant: "footer" }) {
   );
 }
 
-export function SiteFooter() {
+export function SiteFooter({ social = [] }: { social?: SocialLink[] }) {
   const { t } = useChrome();
   return (
     <footer style={{ background: "var(--color-navy-deep)", color: "var(--color-fog)" }}>
@@ -75,10 +77,11 @@ export function SiteFooter() {
             <span style={{ font: "400 14.5px/1.62 var(--font-sans)" }}>
               Accreditation &amp; Compliance Council for Christian and Private Higher Education. Strengthening institutions. Advancing educational quality.
             </span>
-            <div className="pt-1">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-4 pt-1">
               <Link href="/contact" className="btn btn-ghost">
                 {t.contactUs}
               </Link>
+              <SocialLinks links={social} />
             </div>
           </div>
           <VerifyForm variant="footer" />

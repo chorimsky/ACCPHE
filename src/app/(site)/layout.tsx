@@ -6,7 +6,7 @@ import { SearchDialog } from "@/components/site/search";
 import { JsonLd } from "@/components/seo/json-ld";
 import { buildSearchIndex } from "@/lib/search-index";
 import { siteGraph } from "@/lib/seo";
-import { getBlock, getFaqs, getGovernance, getStandards } from "@/server/content";
+import { getBlock, getFaqs, getGovernance, getSocial, getStandards } from "@/server/content";
 import { getSiteContent, publicPrograms, publicRecords, publishedArticles } from "@/server/queries/public";
 
 /**
@@ -18,7 +18,7 @@ export const dynamic = "force-dynamic";
 
 /** Public website shell. Content managed in the portal (banner, status notice) is read on every request. */
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const [content, news, standards, faqs, governance, values, institutions, programs] = await Promise.all([
+  const [content, news, standards, faqs, governance, values, institutions, programs, social] = await Promise.all([
     getSiteContent(),
     publishedArticles(),
     getStandards(),
@@ -27,10 +27,11 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
     getBlock<{ t: string; d: string }[]>("values"),
     publicRecords(),
     publicPrograms(),
+    getSocial(),
   ]);
   return (
     <ChromeProvider>
-      <JsonLd data={siteGraph()} />
+      <JsonLd data={siteGraph(social.map((l) => l.url))} />
       <div className="flex min-h-screen flex-col">
         <SkipLink />
         {content.bannerOn && content.bannerText && (
@@ -58,7 +59,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
             </div>
           </aside>
         )}
-        <SiteFooter />
+        <SiteFooter social={social} />
       </div>
       <SearchDialog index={buildSearchIndex({ news, standards, faqs, governance, values, institutions, programs })} />
       <ConsentNotice />

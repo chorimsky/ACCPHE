@@ -5,7 +5,7 @@
  * in ./site.ts. Lists whose length the system depends on are fixed: 8 pathway stages, 12 standards, 8 program standards, 3 classifications,
  * vision/mission/purpose. Editors can reword them but not add or remove entries.
  */
-import { ACCREDITATION_OBJECTIVES, CLASSES, ELIGIBILITY, ETHICS, EXECUTIVE, FAQS, GOVERNANCE, GOVERNING_BODIES, OBJECTIVES, PILLARS, POLICIES, PROCESS, PROGRAM_ACCREDITATION as PA, ACCREDITATION_BENEFITS as AB, STANDARDS, VALUES, VMP } from "./site";
+import { ACCREDITATION_OBJECTIVES, CLASSES, ELIGIBILITY, ETHICS, EXECUTIVE, FAQS, GOVERNANCE, GOVERNING_BODIES, OBJECTIVES, PILLARS, POLICIES, PROCESS, PROGRAM_ACCREDITATION as PA, ACCREDITATION_BENEFITS as AB, SOCIAL_LINKS, STANDARDS, VALUES, VMP } from "./site";
 
 export type Field =
   | { name: string; label: string; type: "text"; max?: number; hint?: string }
@@ -112,6 +112,22 @@ export const BLOCKS: BlockDef[] = [
     usedOn: "/about",
     block: { kind: "list", fixed: true, item: [ta("d", "Statement", 4, 800)], itemLabel: (_v, i) => ["Vision", "Mission", "Purpose"][i] },
     default: VMP.map(({ d }) => ({ d })),
+  },
+  {
+    key: "social",
+    group: "Contact & social media",
+    title: "Social media profiles",
+    description: "Shown as icons in the website footer and on the contact page, and given to search engines as the Council’s official profiles. Leave a field empty to hide it.",
+    usedOn: "/contact",
+    block: {
+      kind: "object",
+      fields: [
+        { name: "linkedin", label: "LinkedIn page", type: "text", max: 300, hint: "Full address, starting with https://" },
+        { name: "facebook", label: "Facebook page", type: "text", max: 300, hint: "Full address, starting with https://" },
+        { name: "instagram", label: "Instagram profile", type: "text", max: 300, hint: "Full address, starting with https://" },
+      ],
+    },
+    default: SOCIAL_LINKS,
   },
   {
     key: "values",

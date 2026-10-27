@@ -4,6 +4,8 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { CONTACT_ROUTES, SEO } from "@/content/site";
 import { ORG_ID, pageGraph, seoFor } from "@/lib/seo";
 import { getSiteContent } from "@/server/queries/public";
+import { getSocial } from "@/server/content";
+import { SocialLinks } from "@/components/site/social";
 
 export const metadata = seoFor("contact", "/contact");
 
@@ -18,7 +20,7 @@ const TOPICS: Record<string, string> = {
 
 export default async function ContactPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const c = await getSiteContent();
+  const [c, social] = await Promise.all([getSiteContent(), getSocial()]);
   const [title, desc] = SEO.contact;
   const topic = typeof sp.topic === "string" ? TOPICS[sp.topic] : undefined;
   const contactPoint =
@@ -62,6 +64,14 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
               </div>
             ))}
           </dl>
+          {social.length > 0 && (
+            <section aria-labelledby="follow-h" className="mt-6 flex flex-col gap-3">
+              <h2 id="follow-h" className="caps m-0">
+                Follow the Council
+              </h2>
+              <SocialLinks links={social} tone="light" />
+            </section>
+          )}
           <div className="mt-6">
             <AsideBox title="Applying for accreditation?" text="Use the institutional inquiry form so the Secretariat receives the information it needs." href="/apply" cta="Go to the inquiry form" />
           </div>

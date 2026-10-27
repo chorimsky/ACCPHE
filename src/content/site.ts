@@ -1090,3 +1090,10 @@ export const ACCREDITATION_BENEFITS = {
     { t: "Institutional Growth and Competitive Advantage", d: "Differentiate your institution in an increasingly competitive education sector while strengthening its foundation for sustainable growth, innovation, and long-term success." },
   ],
 };
+
+/** Official social media profiles (footer, contact page, and Organization structured data). */
+export const SOCIAL_LINKS = {
+  linkedin: "https://www.linkedin.com/company/accphe",
+  facebook: "https://www.facebook.com/accphe",
+  instagram: "https://www.instagram.com/accphe",
+};

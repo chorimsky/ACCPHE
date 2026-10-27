@@ -33,6 +33,24 @@ test.describe("public website", () => {
     await expect(page.locator('select[name="route"]')).toHaveValue("Program accreditation");
   });
 
+  test("social media profiles are linked in the footer and given to search engines", async ({ page }) => {
+    await page.goto("/");
+    const footer = page.getByRole("contentinfo");
+    for (const [name, url] of [
+      ["LinkedIn", "https://www.linkedin.com/company/accphe"],
+      ["Facebook", "https://www.facebook.com/accphe"],
+      ["Instagram", "https://www.instagram.com/accphe"],
+    ]) {
+      const link = footer.getByRole("link", { name: `ACCPHE on ${name} (opens in a new tab)` });
+      await expect(link).toHaveAttribute("href", url);
+      await expect(link).toHaveAttribute("target", "_blank");
+    }
+    const ld = (await page.locator('script[type="application/ld+json"]').allTextContents()).join(" ");
+    expect(ld).toContain('"sameAs":["https://www.linkedin.com/company/accphe","https://www.facebook.com/accphe","https://www.instagram.com/accphe"]');
+    await page.goto("/contact");
+    await expect(page.getByRole("heading", { name: "Follow the Council" })).toBeVisible();
+  });
+
   test("unknown addresses show the site 404 with navigation", async ({ page }) => {
     const res = await page.goto("/no-such-page");
     expect(res?.status()).toBe(404);

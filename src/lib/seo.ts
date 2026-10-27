@@ -26,11 +26,17 @@ export function seoFor(key: keyof typeof SEO & string, path: string) {
 }
 
 /** Site-wide graph: Organization, WebSite (with directory search) and the accreditation FAQ. */
-export function siteGraph() {
-  const sameAs = (process.env.ORG_SAME_AS ?? "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+export function siteGraph(profiles: string[] = []) {
+  // Official profiles (Site content → Social media profiles), plus any extra ones in ORG_SAME_AS.
+  const sameAs = [
+    ...new Set([
+      ...profiles,
+      ...(process.env.ORG_SAME_AS ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    ]),
+  ];
   return {
     "@context": "https://schema.org",
     "@graph": [
