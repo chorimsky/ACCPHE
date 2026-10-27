@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useFormAction } from "@/components/ui/use-form-action";
 import { submitInquiry } from "@/server/actions/public";
@@ -11,9 +12,15 @@ const PATHWAYS: { t: string; d: string }[] = [
   { t: "Distinguished Membership inquiry", d: "Recognition of exceptional leadership or contribution." },
 ];
 
+/** Programs are evaluated on their own application form, so this pathway leads there instead of submitting the inquiry. */
+const PROGRAM_PATHWAY = { t: "Independent Program Accreditation & Recognition", d: "Evaluation of one academic, professional or ministry program against the eight program standards." };
+
+const READY = "Yes, our institution is ready for accreditation evaluation.";
+const NOT_READY = "Not yet, our institution requires further preparation and guidance.";
+
 const QUESTIONS: [string, string, string[]][] = [
   ["q1", "Is your institution legally established and authorized to provide higher education in its jurisdiction?", ["Yes", "No"]],
-  ["q2", "Can you already evidence compliance with the twelve standards through documented policies and practice?", ["Yes, ready for evaluation", "Not yet"]],
+  ["q2", "Has your institution established and implemented the policies, procedures, and quality assurance practices required to demonstrate compliance with ACCPHE’s twelve accreditation standards?", [READY, NOT_READY]],
   ["q3", "Are you also seeking recognition of exceptional leadership, innovation, or contribution?", ["Yes", "No"]],
 ];
 
@@ -26,9 +33,9 @@ const NEXT_STEPS = [
 function suggest(pf: Record<string, string>) {
   if (pf.q1 === "No") return { title: "Speak with the Secretariat first", text: "Legal establishment and authorization are prerequisites for every pathway. The Secretariat can explain the requirements before you apply.", path: "", contact: true };
   if (!(pf.q1 && pf.q2 && pf.q3)) return null;
-  if (pf.q3 === "Yes" && pf.q2 !== "Not yet")
+  if (pf.q3 === "Yes" && pf.q2 !== NOT_READY)
     return { title: "Accreditation, with a Distinguished Membership inquiry", text: "Begin with an inquiry noting both interests. Distinguished Membership is a separate designation and is not part of the accreditation evaluation.", path: "Distinguished Membership inquiry", contact: false };
-  if (pf.q2 === "Not yet") return { title: "Associate Membership", text: "The preparatory framework offers standards orientation and readiness guidance before a full evaluation. It is not an accreditation award.", path: "Associate Membership", contact: false };
+  if (pf.q2 === NOT_READY) return { title: "Associate Membership", text: "The preparatory framework offers standards orientation and readiness guidance before a full evaluation. It is not an accreditation award.", path: "Associate Membership", contact: false };
   return { title: "Accreditation", text: "Your institution appears ready to begin the eight-stage evaluation pathway, starting with a preliminary eligibility review.", path: "Accreditation", contact: false };
 }
 
@@ -45,10 +52,12 @@ function Legend({ n, children }: { n: number; children: React.ReactNode }) {
 
 export function InquiryForm({ types, maxLabel }: { types: string[]; maxLabel: string }) {
   const [state, onSubmit, pending] = useFormAction(submitInquiry);
+  const router = useRouter();
   const [pf, setPf] = useState<Record<string, string>>({});
   const [pathway, setPathway] = useState("");
   const top = useRef<HTMLDivElement>(null);
   const result = suggest(pf);
+  const programChosen = pathway === PROGRAM_PATHWAY.t;
 
   useEffect(() => {
     if (state) top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -103,7 +112,13 @@ export function InquiryForm({ types, maxLabel }: { types: string[]; maxLabel: st
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-12" noValidate={false}>
+    <form
+      onSubmit={(e) => {
+        if (!programChosen) return onSubmit(e);
+        e.preventDefault();
+        router.push("/accreditation/programs/apply");
+      }}
+      className="flex flex-col gap-12" noValidate={false}>
       <div ref={top} className="scroll-mt-28">
         {state && !state.ok && (
           <div role="alert" className="alert-error" style={{ fontSize: 14.5 }}>
@@ -205,6 +220,14 @@ export function InquiryForm({ types, maxLabel }: { types: string[]; maxLabel: st
             <input name="website" required type="url" placeholder="https://" className="input" />
           </label>
           <label className="field">
+            <span>Facebook page</span>
+            <input name="facebook" type="url" maxLength={300} placeholder="https://www.facebook.com/…" className="input" />
+          </label>
+          <label className="field">
+            <span>LinkedIn page</span>
+            <input name="linkedin" type="url" maxLength={300} placeholder="https://www.linkedin.com/company/…" className="input" />
+          </label>
+          <label className="field">
             <span>Institution type *</span>
             <select name="type" required defaultValue="" className="select">
               <option value="">Select…</option>
@@ -254,7 +277,7 @@ export function InquiryForm({ types, maxLabel }: { types: string[]; maxLabel: st
             Interested pathway *
           </span>
           <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,230px),1fr))" }}>
-            {PATHWAYS.map((p) => {
+            {[...PATHWAYS, PROGRAM_PATHWAY].map((p) => {
               const on = pathway === p.t;
               return (
                 <label
@@ -274,6 +297,19 @@ export function InquiryForm({ types, maxLabel }: { types: string[]; maxLabel: st
             })}
           </div>
         </div>
+        {programChosen && (
+          <div role="status" className="dark flex flex-wrap items-center justify-between gap-4 px-[22px] py-5">
+            <div className="flex flex-[1_1_320px] flex-col gap-1.5">
+              <span style={{ font: "500 19px/1.3 var(--font-serif)" }}>Program accreditation has its own application</span>
+              <span className="text-fog" style={{ font: "400 14px/1.55 var(--font-sans)" }}>
+                Each program is applied for separately, with its title, delivery, duration and intended learners. Continue on the program application; this institutional inquiry is not needed.
+              </span>
+            </div>
+            <Link href="/accreditation/programs/apply" className="btn btn-light" style={{ padding: "12px 18px", fontSize: 14 }}>
+              Apply for program accreditation
+            </Link>
+          </div>
+        )}
         <label className="field mt-2.5">
           <span>Brief institutional profile *</span>
           <textarea name="profile" required rows={6} maxLength={6000} placeholder="Mission, programs offered, student population, delivery model…" className="textarea" />
@@ -321,9 +357,15 @@ export function InquiryForm({ types, maxLabel }: { types: string[]; maxLabel: st
       </fieldset>
 
       <div className="flex flex-wrap items-center gap-5 border-t border-line pt-2">
-        <button type="submit" disabled={pending} className="btn btn-primary mt-6" style={{ padding: "17px 30px", fontSize: 15.5 }}>
-          {pending ? "Submitting…" : "Submit Institutional Inquiry"}
-        </button>
+        {programChosen ? (
+          <Link href="/accreditation/programs/apply" className="btn btn-primary mt-6" style={{ padding: "17px 30px", fontSize: 15.5 }}>
+            Continue to the program application
+          </Link>
+        ) : (
+          <button type="submit" disabled={pending} className="btn btn-primary mt-6" style={{ padding: "17px 30px", fontSize: 15.5 }}>
+            {pending ? "Submitting…" : "Submit Institutional Inquiry"}
+          </button>
+        )}
       </div>
     </form>
   );

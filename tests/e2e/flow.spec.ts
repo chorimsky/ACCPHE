@@ -18,6 +18,8 @@ test.describe.serial("accreditation flow", () => {
     await page.getByLabel("Country of establishment *").fill("Rwanda");
     await page.getByLabel("Year of establishment *").fill("1999");
     await page.getByLabel("Official website *").fill("https://e2e.example.edu");
+    await page.getByLabel("Facebook page").fill("https://www.facebook.com/e2e-university");
+    await page.getByLabel("LinkedIn page").fill("https://www.linkedin.com/school/e2e-university");
     await page.getByLabel("Institution type *").selectOption("University");
     await page.getByLabel("Government authorization or registration reference *").fill("HEC-RW-2041");
     await page.getByLabel("Full name *").fill("E2E Registrar");

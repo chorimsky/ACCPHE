@@ -276,6 +276,8 @@ const editSchema = z.object({
   name: zs.text("Institution name", 200),
   country: zs.text("Country", 100),
   website: zs.opt(300),
+  facebook: zs.opt(300),
+  linkedin: zs.opt(300),
   yearEstablished: z
     .string()
     .trim()
@@ -308,6 +310,8 @@ const FIELD_LABELS: Record<string, string> = {
   name: "institution name",
   country: "country",
   website: "website",
+  facebook: "Facebook page",
+  linkedin: "LinkedIn page",
   yearEstablished: "year established",
   type: "institution type",
   authRef: "authorization reference",

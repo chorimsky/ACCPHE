@@ -93,6 +93,46 @@ test.describe("public website", () => {
     await expect(page.getByRole("radio", { name: "Associate Membership", exact: true })).toBeChecked();
   });
 
+  test("pathway finder asks about readiness against the twelve standards", async ({ page }) => {
+    await page.goto("/apply");
+    const finder = page.getByRole("region", { name: "Find the right pathway" });
+    await expect(finder.getByText("demonstrate compliance with ACCPHE’s twelve accreditation standards?")).toBeVisible();
+    await finder.getByRole("group").nth(0).getByRole("button", { name: "Yes" }).click();
+    await finder.getByRole("button", { name: "Yes, our institution is ready for accreditation evaluation." }).click();
+    await finder.getByRole("group").nth(2).getByRole("button", { name: "No" }).click();
+    await finder.getByRole("button", { name: "Use this pathway" }).click();
+    await expect(page.getByRole("radio", { name: "Accreditation", exact: true })).toBeChecked();
+  });
+
+  test("choosing program accreditation leads to the program application", async ({ page }) => {
+    await page.goto("/apply");
+    await page.getByRole("radio", { name: "Independent Program Accreditation & Recognition" }).check();
+    await expect(page.getByRole("button", { name: "Submit Institutional Inquiry" })).toHaveCount(0);
+    await page.getByRole("link", { name: "Continue to the program application" }).click();
+    await expect(page).toHaveURL(/\/accreditation\/programs\/apply$/);
+  });
+
+  test("an invalid Facebook address is refused", async ({ page }) => {
+    await page.goto("/apply");
+    await page.getByLabel("Legal institution name *").fill("Social Check College");
+    await page.getByLabel("Country of establishment *").fill("Ghana");
+    await page.getByLabel("Year of establishment *").fill("2005");
+    await page.getByLabel("Official website *").fill("https://social.example.edu");
+    await page.getByLabel("Facebook page").fill("https://www.linkedin.com/company/social");
+    await page.getByLabel("Institution type *").selectOption("College");
+    await page.getByLabel("Government authorization or registration reference *").fill("GH-1");
+    await page.getByLabel("Full name *").fill("Someone");
+    await page.getByLabel("Position *").fill("Clerk");
+    await page.getByLabel("Official institutional email *").fill("someone@example.edu");
+    await page.getByLabel("Telephone number *").fill("+233 1");
+    await page.getByRole("radio", { name: "Accreditation", exact: true }).check();
+    await page.getByLabel("Brief institutional profile *").fill("Checking social links.");
+    await page.getByLabel(/I declare that the information submitted is accurate/).check();
+    await page.getByLabel(/I acknowledge that the information provided/).check();
+    await page.getByRole("button", { name: "Submit Institutional Inquiry" }).click();
+    await expect(page.getByRole("alert").first()).toContainText("Enter the Facebook page as a full address");
+  });
+
   test("language selector translates navigation and explains English is authoritative", async ({ page }) => {
     await page.goto("/");
     await page.getByLabel("Language").selectOption("fr");

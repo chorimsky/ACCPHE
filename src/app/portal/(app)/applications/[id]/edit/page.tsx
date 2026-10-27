@@ -30,6 +30,8 @@ export default async function EditApplicationPage({ params }: { params: Promise<
             name: a.name,
             country: a.country,
             website: a.website,
+            facebook: a.facebook,
+            linkedin: a.linkedin,
             yearEstablished: a.yearEstablished,
             type: a.type,
             authRef: a.authRef,

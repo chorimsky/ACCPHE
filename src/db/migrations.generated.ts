@@ -93,5 +93,14 @@ export const MIGRATIONS: BundledMigration[] = [
     "statements": [
       "ALTER TABLE `users` ADD `must_change_password` integer DEFAULT false NOT NULL;"
     ]
+  },
+  {
+    "tag": "0004_early_sunfire",
+    "when": 1793113649047,
+    "hash": "0ad941df966278df31f27b854e35aebcdb813baf606bfc64b506eaa8470a8021",
+    "statements": [
+      "ALTER TABLE `applications` ADD `facebook` text DEFAULT '' NOT NULL;",
+      "ALTER TABLE `applications` ADD `linkedin` text DEFAULT '' NOT NULL;"
+    ]
   }
 ];

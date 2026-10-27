@@ -82,6 +82,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
     [program ? "Provider type" : "Institution type", app.type],
     ["Year established", app.yearEstablished],
     ["Website", app.website],
+    ...(program ? [] : ([["Facebook", app.facebook], ["LinkedIn", app.linkedin]] as [string, string][])),
     ["Authorization / registration", app.authRef],
     ["Representative", [app.repName, app.repPosition].filter(Boolean).join(", ")],
     ["Email", app.repEmail],

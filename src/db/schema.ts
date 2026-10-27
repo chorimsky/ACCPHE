@@ -112,6 +112,9 @@ export const applications = sqliteTable(
     name: text("name").notNull(),
     country: text("country").notNull().default(""),
     website: text("website").notNull().default(""),
+    /** Optional social profiles given on the website inquiry */
+    facebook: text("facebook").notNull().default(""),
+    linkedin: text("linkedin").notNull().default(""),
     yearEstablished: text("year_established").notNull().default(""),
     type: text("type").notNull().default(""),
     authRef: text("auth_ref").notNull().default(""),

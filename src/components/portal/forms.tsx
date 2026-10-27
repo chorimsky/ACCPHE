@@ -749,6 +749,8 @@ export function ApplicationEditForm({ app }: { app: Record<string, string> }) {
               </label>
             )}
             {f("website", "Official website", { type: "url", max: 300 })}
+            {!program && f("facebook", "Facebook page", { type: "url", max: 300 })}
+            {!program && f("linkedin", "LinkedIn page", { type: "url", max: 300 })}
             {f("yearEstablished", "Year established", { max: 4 })}
             <label className="p-label">
               <span>{program ? "Provider type" : "Institution type"}</span>

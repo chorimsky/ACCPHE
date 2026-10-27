@@ -35,6 +35,8 @@ export type NewApplication = {
   country: string;
   pathway: Pathway;
   website?: string;
+  facebook?: string;
+  linkedin?: string;
   yearEstablished?: string;
   type?: string;
   authRef?: string;

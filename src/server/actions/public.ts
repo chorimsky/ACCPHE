@@ -15,6 +15,16 @@ import { MAX_UPLOAD_BYTES, putFile } from "@/server/storage";
 
 const MAX_INQUIRY_FILES = 3;
 
+/** Optional link to the institution's page on a social network; accepts the address with or without https://. */
+const socialUrl = (label: string, host: string) =>
+  z
+    .string()
+    .trim()
+    .max(300)
+    .optional()
+    .transform((v) => (!v ? "" : /^https?:\/\//i.test(v) ? v.replace(/^http:/i, "https:") : `https://${v}`))
+    .refine((v) => v === "" || new RegExp(`^https://([a-z0-9-]+\\.)*${host.replace(".", "\\.")}/\\S+$`, "i").test(v), `Enter the ${label} page as a full address, for example https://www.${host}/…`);
+
 const inquirySchema = z.object({
   name: zs.text("Legal institution name", 200),
   country: zs.text("Country of establishment", 100),
@@ -28,6 +38,8 @@ const inquirySchema = z.object({
     .trim()
     .max(300)
     .refine((v) => /^https?:\/\/[^\s.]+\.[^\s]+$/i.test(v), "Enter the official website as a full address, starting with https://"),
+  facebook: socialUrl("Facebook", "facebook.com"),
+  linkedin: socialUrl("LinkedIn", "linkedin.com"),
   type: z.enum(INSTITUTION_TYPES as [string, ...string[]], { error: "Select the institution type." }),
   authRef: zs.text("Government authorization or registration reference", 200),
   repName: zs.text("Full name", 150),
@@ -63,6 +75,8 @@ export async function submitInquiry(_prev: ActionState, fd: FormData): Promise<A
         country: d.country,
         yearEstablished: d.year,
         website: d.website,
+        facebook: d.facebook,
+        linkedin: d.linkedin,
         type: d.type,
         authRef: d.authRef,
         repName: d.repName,
