@@ -43,6 +43,13 @@
       "when": 1793126726069,
       "tag": "0005_familiar_wither",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1793338486764,
+      "tag": "0006_sloppy_toro",
+      "breakpoints": true
     }
   ]
 }

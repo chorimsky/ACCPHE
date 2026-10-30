@@ -40,6 +40,10 @@ Next.js 16 (App Router, Server Components, Server Actions) · TypeScript · Tail
 | `/accreditation/programs/apply` | Program accreditation application (one program per application; reference `PRG-YYYY-NNNN`) |
 | `/directory/programs` (`?q=`, `?country=`, `?cls=`) | Directory of approved programs; entering a verification number (`ACCPHE-P-YYYY-NNNN`) opens its record |
 | `/directory/programs/<slug>` | One approved program's record (with `Course` + credential structured data) |
+| `/fellows` | College of Fellows & Distinctions: three pathways, eight distinctions, eligibility, value, integrity, process, evidence |
+| `/fellows/apply` (`?route=nomination`, `?distinction=CCHEP`) | Application or nomination for a fellowship, certification or distinction (reference `FEL-YYYY-NNNN`) |
+| `/directory/fellows` (`?q=`, `?country=`, `?cls=`) | College of Fellows Directory (credential verification register); a verification number (`ACCPHE-F-YYYY-NNNN`) opens its entry |
+| `/directory/fellows/<slug>` | One recipient's entry (with `Person` + credential structured data) |
 | `/news` (`?category=`), `/news/<slug>`, `/news/rss.xml` | News & Insights (articles dated in the future are scheduled) |
 | `/apply` | Institutional inquiry with pathway finder and document upload |
 | `/contact` (`?topic=general|membership|verification|ethics`) | Contact form |
@@ -53,10 +57,10 @@ Site search: `/` or Ctrl/Cmd + K. Navigation language: EN / FR / ES / PT (offici
 | Role | Modules |
 |---|---|
 | Administrator | Overview, Applications, Directory records, News & articles, Complaints & appeals, Messages, Site content, Users & access, Reports & audit |
-| Accreditation Officer | Overview, Applications (institutions and programs), Directory records (institutions and programs) |
+| Accreditation Officer | Overview, Applications (institutions, programs, College of Fellows), Directory records (institutions, programs, College of Fellows register) |
 | Communications Editor | Overview, News & articles, Messages, Site content |
 | Standards & Ethics Officer | Overview, Complaints & appeals, Messages |
-| Institutional Reviewer | My reviews (assigned only; conflict-of-interest declaration; rating against the 12 institutional or 8 program standards; report) |
+| Institutional Reviewer | My reviews (assigned only; conflict-of-interest declaration; rating against the 12 institutional standards, 8 program standards, or 6 College assessment criteria; report) |
 | Accreditation Commission Member | Decisions (review record, own vote, recusal) |
 | Institution Representative | My application — institution or program (pathway, uploads, correspondence, reports and substantive change once decided) |
 
@@ -89,6 +93,14 @@ the server for every page, action, download and export.
 3. Reviewers rate the program against the eight program standards (Site content → Program Accreditation; the list length is fixed because reviews depend on it).
 4. Commission members vote (*Award program accreditation*, *Grant program recognition*, *Decline*, *Defer*); staff record the decision → a draft program record with a unique verification number (`ACCPHE-P-YYYY-NNNN`, valid three years by default).
 5. Staff verify and publish the record (Directory records → Programs) → it appears in `/directory/programs`, the sitemap and site search; status changes keep a dated public history. Staff then move the program to Ongoing quality assurance; renewals due within 90 days appear on the Overview.
+
+### College of Fellows flow
+
+1. A candidate applies, or someone nominates them, at `/fellows/apply` → application at step 1 (`FEL-YYYY-NNNN`), acknowledgement to whoever submitted it, staff alert. (Staff can also log one: Applications → College of Fellows.)
+2. Staff work the six steps (Application or nomination → Eligibility & documentation review → Professional & ethical assessment → Review & decision → Formal recognition & registration → Continued professional standing).
+3. Reviewers rate the candidate against the six assessment criteria (Site content → College of Fellows; fixed length).
+4. Commission members vote (*Confer the distinction sought*, *Confer a different distinction*, *Decline*, *Defer*); staff confer one of the eight distinctions → a draft register entry with a verification number (`ACCPHE-F-YYYY-NNNN`). Certifications (CCHEP) get a renewal date three years ahead; fellowships and recognitions do not expire.
+5. Staff verify and publish the entry (Directory records → College of Fellows) → it appears in `/directory/fellows`, the sitemap and site search. Certification renewals due within 90 days appear on the Overview.
 
 ## Commands
 

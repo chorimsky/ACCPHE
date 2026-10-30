@@ -26,7 +26,7 @@ export default async function DecisionPage({ params }: { params: Promise<{ id: s
         <Back href="/portal/decisions">All decisions</Back>
         <section className="flex flex-col gap-1.5 rounded border border-line bg-white p-6">
           <span className="p-meta">
-            {app.ref} · {app.kind === "program" ? `${T.label} · ${app.name}` : app.pathway} · {app.country}
+            {app.ref} · {app.kind === "program" ? `${T.label} · ${app.name}` : app.kind === "fellow" ? `${T.label} · sought: ${app.fellowDesignation}` : app.pathway} · {app.country}
           </span>
           <h2 className="p-h2">{appTitle(app)}</h2>
         </section>
@@ -98,7 +98,7 @@ export default async function DecisionPage({ params }: { params: Promise<{ id: s
             </section>
           </div>
           <aside className="flex min-w-0 flex-[1_1_320px] flex-col gap-4">
-            <VotePanel applicationId={app.id} options={T.voteOptions} party={app.kind === "program" ? "this program or its provider" : "this institution"} myVote={mine?.vote.vote ?? null} />
+            <VotePanel applicationId={app.id} options={T.voteOptions} party={app.kind === "program" ? "this program or its provider" : app.kind === "fellow" ? "this candidate" : "this institution"} myVote={mine?.vote.vote ?? null} />
             <section className="flex flex-col gap-2.5 rounded border border-line bg-white p-[22px]">
               <h3 className="p-h3">Deliberation record</h3>
               <span className="text-slate" style={{ font: "600 12.5px var(--font-sans)" }}>

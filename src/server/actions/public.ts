@@ -2,9 +2,9 @@
 
 import { z } from "zod";
 import { db } from "@/db";
-import { files, messages, MESSAGE_ROUTES, PATHWAYS } from "@/db/schema";
+import { DISTINCTION_CODES, files, messages, MESSAGE_ROUTES, PATHWAYS } from "@/db/schema";
 import { attempt, fail, ok, parseForm, zs, type ActionState } from "@/lib/action";
-import { INSTITUTION_TYPES, PROGRAM_DELIVERY, PROVIDER_TYPES } from "@/lib/domain";
+import { distinctionLabel, FELLOW_ROUTES, INSTITUTION_TYPES, PROGRAM_DELIVERY, PROVIDER_TYPES } from "@/lib/domain";
 import { abs } from "@/lib/site";
 import { audit } from "@/server/audit";
 import { trySendEmail } from "@/server/email";
@@ -185,6 +185,105 @@ export async function submitProgramApplication(_prev: ActionState, fd: FormData)
     await notifyModule("applications", {
       subject: `New program application: ${d.programTitle} — ${d.name} (${app.ref})`,
       text: `${d.name} (${d.country}) applied for program accreditation of “${d.programTitle}” (${d.programCategory}, ${d.programDelivery}).${stored.length ? ` ${stored.length} supporting document(s) attached.` : ""}`,
+      link: `/portal/applications/${app.id}`,
+    });
+    return ok("received", { ref: app.ref });
+  });
+}
+
+const fellowSchema = z
+  .object({
+    route: z.enum(FELLOW_ROUTES, { error: "Choose whether this is an application or a nomination." }),
+    designation: z.enum(DISTINCTION_CODES, { error: "Select the fellowship, certification or distinction sought." }),
+    name: zs.text("Candidate’s full name", 200),
+    position: zs.text("Current position or title", 200),
+    affiliation: zs.opt(200, "Institution or organization"),
+    country: zs.text("Country", 100),
+    candidateEmail: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .max(200)
+      .optional()
+      .transform((v) => v ?? "")
+      .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Enter a valid email for the candidate."),
+    website: zs.url("Professional profile or website"),
+    profile: zs.text("Summary of qualifications and contributions", 6000),
+    repName: zs.opt(150, "Nominator’s name"),
+    repPosition: zs.opt(150, "Nominator’s position"),
+    repEmail: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .max(200)
+      .optional()
+      .transform((v) => v ?? "")
+      .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Enter a valid email for the nominator."),
+    repPhone: zs.text("Telephone number", 60),
+    declareAccurate: z.literal("on", { error: "Confirm the accuracy declaration." }),
+    declareEthics: z.literal("on", { error: "Confirm the professional ethics declaration." }),
+    declareDisclosure: z.literal("on", { error: "Acknowledge the nature of the College’s distinctions." }),
+    declarePrivacy: z.literal("on", { error: "Acknowledge the privacy declaration." }),
+    company_website: z.string().optional(),
+  })
+  .superRefine((d, ctx) => {
+    if (d.route === "Application" && !d.candidateEmail) ctx.addIssue({ code: "custom", path: ["candidateEmail"], message: "Your email is required." });
+    if (d.route === "Nomination" && !d.repName) ctx.addIssue({ code: "custom", path: ["repName"], message: "Your name (the nominator) is required." });
+    if (d.route === "Nomination" && !d.repEmail) ctx.addIssue({ code: "custom", path: ["repEmail"], message: "Your email (the nominator) is required." });
+  });
+
+/** College of Fellows & Professional Distinctions: an application by the candidate, or a nomination by someone else. */
+export async function submitFellowApplication(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  return attempt(async () => {
+    const parsed = parseForm(fellowSchema, fd);
+    if ("error" in parsed) return fail(parsed.error);
+    const d = parsed.data;
+    if (d.company_website) return ok("received", { ref: "FEL-0000" });
+    if (await overIpLimit("fellow-application", 5, 60 * 60_000)) return fail("Too many submissions were sent from this connection. Please try again in an hour or contact the Secretariat.");
+
+    const uploads = fd.getAll("documents").filter((f): f is File => f instanceof File && f.size > 0);
+    if (uploads.length > MAX_INQUIRY_FILES) return fail(`Attach at most ${MAX_INQUIRY_FILES} files. The Secretariat will request further evidence after reviewing the submission.`);
+    if (uploads.reduce((n, f) => n + f.size, 0) > MAX_UPLOAD_BYTES) return fail("Attachments may total at most 4 MB. Send larger documents after the Secretariat contacts you.");
+    const stored = [];
+    for (const f of uploads) stored.push(await putFile(f));
+
+    const nomination = d.route === "Nomination";
+    // The person submitting (the candidate, or the nominator) is the application's contact.
+    const contact = nomination
+      ? { repName: d.repName, repPosition: d.repPosition, repEmail: d.repEmail, repPhone: d.repPhone }
+      : { repName: d.name, repPosition: d.position, repEmail: d.candidateEmail, repPhone: d.repPhone };
+    const app = await createApplication(
+      {
+        kind: "fellow",
+        fellowRoute: d.route,
+        fellowDesignation: d.designation,
+        fellowEmail: d.candidateEmail,
+        fellowPosition: d.position,
+        fellowAffiliation: d.affiliation,
+        name: d.name,
+        country: d.country,
+        website: d.website,
+        profile: d.profile,
+        ...contact,
+        pathway: "Accreditation",
+      },
+      WEBSITE,
+      "website",
+    );
+    if (stored.length) {
+      await db.insert(files).values(stored.map((s) => ({ applicationId: app.id, fileName: s.fileName, storageKey: s.key, size: s.size, mimeType: s.mimeType, uploadedByLabel: "Website" })));
+    }
+
+    const sought = distinctionLabel(d.designation);
+    await trySendEmail(
+      contact.repEmail,
+      `${nomination ? "Nomination" : "Application"} received — ${app.ref}`,
+      `Dear ${contact.repName},\n\nThank you for ${nomination ? `nominating ${d.name}` : "applying"} to the ACCPHE International College of Fellows & Professional Distinctions. The ${nomination ? "nomination" : "application"} for ${sought} has been received under the reference ${app.ref}.\n\nThe College Secretariat will review the submission for completeness, confirm the preliminary eligibility requirements, and tell you which supporting evidence to provide — for example qualifications, a curriculum vitae, publications or other contributions, and professional references.\n\nKeep your reference for all correspondence.${nomination ? "" : " You may request a portal account to follow the review and upload documents; quote the reference so the Secretariat can link it."}\n\nRecognition is not automatic, and payment of any application or assessment fee does not guarantee approval. The College’s distinctions are recognition issued by ACCPHE within its own professional framework; they are not academic degrees, professional licenses, governmental endorsements, or institutional accreditation.`,
+      nomination ? undefined : { label: "Request a portal account", url: abs(`/portal/register?ref=${encodeURIComponent(app.ref)}`) },
+    );
+    await notifyModule("applications", {
+      subject: `New College of Fellows ${nomination ? "nomination" : "application"}: ${d.name} — ${d.designation} (${app.ref})`,
+      text: `${nomination ? `${d.repName} nominated ${d.name}` : `${d.name} applied`} for ${sought} (${d.position}${d.affiliation ? `, ${d.affiliation}` : ""}; ${d.country}).${stored.length ? ` ${stored.length} supporting document(s) attached.` : ""}`,
       link: `/portal/applications/${app.id}`,
     });
     return ok("received", { ref: app.ref });

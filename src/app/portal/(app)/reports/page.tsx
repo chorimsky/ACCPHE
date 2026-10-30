@@ -70,7 +70,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <div className="grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))" }}>
           <Card className="gap-2.5" style={{ padding: 22 }}>
             <h2 className="p-h3">Applications by pathway</h2>
-            <Bars rows={group(apps, (a) => (a.kind === "program" ? "Program accreditation" : a.pathway))} />
+            <Bars rows={group(apps, (a) => (a.kind === "program" ? "Program accreditation" : a.kind === "fellow" ? "College of Fellows" : a.pathway))} />
           </Card>
           <Card className="gap-2.5" style={{ padding: 22 }}>
             <h2 className="p-h3">Applications by country</h2>

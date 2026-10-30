@@ -80,11 +80,11 @@ export function SiteHeader() {
           <Lockup
             size={46}
             descriptor="Accreditation & Compliance Council for Christian and Private Higher Education"
-            descriptorClass="hidden max-w-[230px] sm:block xl:hidden"
+            descriptorClass="hidden max-w-[230px] sm:block min-[90rem]:hidden"
           />
         </Link>
 
-        <div className="hidden h-full items-center gap-3 xl:flex">
+        <div className="hidden h-full items-center gap-3 min-[90rem]:flex">
           <nav aria-label="Main" className="flex h-full items-stretch">
             {NAV.map((n, i) => {
               const active = isActive(pathname, n.href);
@@ -110,7 +110,7 @@ export function SiteHeader() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-2 xl:hidden">
+        <div className="flex items-center gap-2 min-[90rem]:hidden">
           <button type="button" onClick={openSearch} className="flex h-11 min-w-11 items-center justify-center gap-2 rounded-[2px] border border-line-strong bg-transparent px-3 text-navy hover:border-navy" style={{ font: "600 13.5px var(--font-sans)" }}>
             <SearchGlyph />
             <span className="hidden sm:inline">{t.search}</span>
@@ -135,7 +135,7 @@ export function SiteHeader() {
       </div>
 
       {menu && (
-        <div id="mobile-nav" className="border-t border-line bg-white xl:hidden" style={{ boxShadow: "0 16px 32px rgba(20,43,69,.08)" }}>
+        <div id="mobile-nav" className="border-t border-line bg-white min-[90rem]:hidden" style={{ boxShadow: "0 16px 32px rgba(20,43,69,.08)" }}>
           <nav aria-label="Main" className="wrap flex flex-col pb-6 pt-2">
             {NAV.map((n, i) => {
               const active = isActive(pathname, n.href);

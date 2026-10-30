@@ -3,7 +3,7 @@ import { desc } from "drizzle-orm";
 import { db } from "@/db";
 import { applications, users } from "@/db/schema";
 import { appPill, KindSwitch, ModuleBody, ModuleHeader, Pill } from "@/components/portal/ui";
-import { appTitle, TRACKS } from "@/lib/domain";
+import { appTitle, distinctionLabel, TRACKS } from "@/lib/domain";
 import { fmtRelative } from "@/lib/format";
 import { requireModule } from "@/server/auth";
 import { ListSearch } from "@/components/portal/list-search";
@@ -13,19 +13,20 @@ export const metadata = { title: "Applications" };
 export default async function ApplicationsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   await requireModule("applications");
   const sp = await searchParams;
-  const kind = sp.kind === "program" ? "program" : "institution";
+  const kind = sp.kind === "program" ? "program" : sp.kind === "fellow" ? "fellow" : "institution";
   const program = kind === "program";
+  const fellow = kind === "fellow";
   const T = TRACKS[kind];
   const q = (sp.q ?? "").trim().toLowerCase();
   const stage = sp.stage !== undefined && /^\d$/.test(sp.stage) ? Number(sp.stage) : null;
   const [everything, staff] = await Promise.all([db.select().from(applications).orderBy(desc(applications.updatedAt)), db.select({ id: users.id, name: users.name }).from(users)]);
   const all = everything.filter((a) => a.kind === kind);
   const officerName = new Map(staff.map((s) => [s.id, s.name]));
-  const rows = all.filter((a) => (stage === null || a.stage === stage) && (!q || `${a.name} ${a.programTitle} ${a.ref} ${a.country}`.toLowerCase().includes(q)));
+  const rows = all.filter((a) => (stage === null || a.stage === stage) && (!q || `${a.name} ${a.programTitle} ${a.fellowDesignation} ${a.fellowAffiliation} ${a.ref} ${a.country}`.toLowerCase().includes(q)));
   const href = (over: { stage?: number | null; kind?: string }) => {
     const p = new URLSearchParams();
     const k = over.kind ?? kind;
-    if (k === "program") p.set("kind", "program");
+    if (k !== "institution") p.set("kind", k);
     if (sp.q && over.kind === undefined) p.set("q", sp.q);
     const st = over.stage === undefined ? null : over.stage;
     if (st !== null && over.kind === undefined) p.set("stage", String(st));
@@ -39,24 +40,25 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
         <a href="/portal/export/applications" className="p-btn-secondary">
           Export CSV
         </a>
-        <Link href={program ? "/portal/applications/new?kind=program" : "/portal/applications/new"} className="p-btn">
-          {program ? "+ Log a program application" : "+ Log an inquiry"}
+        <Link href={kind === "institution" ? "/portal/applications/new" : `/portal/applications/new?kind=${kind}`} className="p-btn">
+          {program ? "+ Log a program application" : fellow ? "+ Log a fellowship application" : "+ Log an inquiry"}
         </Link>
-        <a href={program ? "/accreditation/programs/apply" : "/apply"} target="_blank" rel="noopener" className="p-btn-secondary">
-          {program ? "Public program application ↗" : "Public inquiry form ↗"}
+        <a href={program ? "/accreditation/programs/apply" : fellow ? "/fellows/apply" : "/apply"} target="_blank" rel="noopener" className="p-btn-secondary">
+          {program ? "Public program application ↗" : fellow ? "Public application form ↗" : "Public inquiry form ↗"}
         </a>
       </ModuleHeader>
       <ModuleBody>
         <KindSwitch
           label="Application type"
           items={[
-            { href: href({ kind: "institution" }), label: "Institutions", n: everything.filter((a) => a.kind === "institution").length, on: !program },
+            { href: href({ kind: "institution" }), label: "Institutions", n: everything.filter((a) => a.kind === "institution").length, on: kind === "institution" },
             { href: href({ kind: "program" }), label: "Programs", n: everything.filter((a) => a.kind === "program").length, on: program },
+            { href: href({ kind: "fellow" }), label: "College of Fellows", n: everything.filter((a) => a.kind === "fellow").length, on: fellow },
           ]}
         />
         <section className="flex flex-col rounded border border-line bg-white">
           <div className="flex flex-col gap-3.5 px-5 pt-[18px]">
-            <ListSearch placeholder={program ? "Search by program, provider, reference, or country" : "Search by institution, reference, or country"} />
+            <ListSearch placeholder={program ? "Search by program, provider, reference, or country" : fellow ? "Search by candidate, distinction, institution, reference, or country" : "Search by institution, reference, or country"} />
             <nav aria-label="Stage" className="flex gap-1.5 overflow-x-auto pb-3.5" style={{ scrollbarWidth: "none" }}>
               <Link href={href({ stage: null })} scroll={false} className="chip" aria-current={stage === null ? "page" : undefined}>
                 All<span>{all.length}</span>
@@ -74,8 +76,8 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
               <thead>
                 <tr>
                   <th scope="col">Reference</th>
-                  <th scope="col">{program ? "Program" : "Institution"}</th>
-                  <th scope="col">{program ? "Category" : "Pathway"}</th>
+                  <th scope="col">{program ? "Program" : fellow ? "Candidate" : "Institution"}</th>
+                  <th scope="col">{program ? "Category" : fellow ? "Distinction sought" : "Pathway"}</th>
                   <th scope="col">Stage</th>
                   <th scope="col">Officer</th>
                   <th scope="col">Updated</th>
@@ -93,11 +95,11 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                           {appTitle(a)}
                         </Link>
                         <span className="text-muted" style={{ font: "400 12.5px var(--font-sans)" }}>
-                          {program ? `${a.name} · ${a.country}` : a.country}
+                          {program ? `${a.name} · ${a.country}` : fellow ? [a.fellowRoute === "Nomination" ? `Nominated by ${a.repName}` : "", a.fellowAffiliation, a.country].filter(Boolean).join(" · ") : a.country}
                         </span>
                       </div>
                     </td>
-                    <td className="max-w-[220px]">{program ? a.programCategory || "—" : a.pathway}</td>
+                    <td className="max-w-[220px]">{program ? a.programCategory || "—" : fellow ? distinctionLabel(a.fellowDesignation) : a.pathway}</td>
                     <td>
                       <Pill tone={appPill(a)}>{a.decision === "Declined" ? "Declined" : `${a.stage + 1} · ${T.stages[a.stage]}`}</Pill>
                     </td>

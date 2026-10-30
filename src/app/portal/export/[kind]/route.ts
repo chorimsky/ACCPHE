@@ -1,6 +1,6 @@
 import { desc, like, or } from "drizzle-orm";
 import { db } from "@/db";
-import { applications, auditLog, programRecords, records, users } from "@/db/schema";
+import { applications, auditLog, fellows, programRecords, records, users } from "@/db/schema";
 import { canAccess, trackOf } from "@/lib/domain";
 import { isoDay } from "@/lib/format";
 import { audit } from "@/server/audit";
@@ -23,14 +23,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ kind: st
   if (kind === "applications" && canAccess(user.role, "applications")) {
     const [apps, staff] = await Promise.all([db.select().from(applications).orderBy(desc(applications.submittedAt)), db.select({ id: users.id, name: users.name }).from(users)]);
     const name = new Map(staff.map((s) => [s.id, s.name]));
-    rows = [["Reference", "Type", "Institution / provider", "Program", "Country", "Pathway", "Stage", "Decision", "Officer", "Representative", "Email", "Submitted", "Updated"]].concat(
+    rows = [["Reference", "Type", "Institution / provider / candidate", "Program / distinction sought", "Country", "Pathway", "Stage", "Decision", "Officer", "Representative / contact", "Email", "Submitted", "Updated"]].concat(
       apps.map((a) => [
         a.ref,
         trackOf(a).label,
         a.name,
-        a.programTitle,
+        a.kind === "fellow" ? `${a.fellowDesignation} (${a.fellowRoute})` : a.programTitle,
         a.country,
-        a.kind === "program" ? "" : a.pathway,
+        a.kind === "institution" ? a.pathway : "",
         trackOf(a).stages[a.stage],
         a.decision,
         a.officerId ? (name.get(a.officerId) ?? "") : "Unassigned",
@@ -49,6 +49,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ kind: st
     const recs = await db.select().from(programRecords).orderBy(programRecords.title);
     rows = [["Verification no.", "Program", "Provider", "Country", "Category", "Status awarded", "Scope", "Effective", "Valid until", "Conditions", "Status", "Verified", "Public URL"]].concat(
       recs.map((r) => [r.verification, r.title, r.provider, r.country, r.category, r.award, r.scope, r.effective, r.review, r.conditions, r.status, r.verified ? "Yes" : "No", `/directory/programs/${r.slug}`]),
+    );
+  } else if (kind === "fellows" && canAccess(user.role, "directory")) {
+    const recs = await db.select().from(fellows).orderBy(fellows.name);
+    rows = [["Verification no.", "Title", "Name", "Distinction", "Position", "Institution or organization", "Country", "Conferred", "Renewal", "Citation", "Status", "Verified", "Public URL"]].concat(
+      recs.map((r) => [r.verification, r.honorific, r.name, r.designation, r.position, r.affiliation, r.country, r.effective, r.review, r.citation, r.status, r.verified ? "Yes" : "No", `/directory/fellows/${r.slug}`]),
     );
   } else if (kind === "audit" && canAccess(user.role, "reports")) {
     const q = new URL(req.url).searchParams.get("q")?.trim();

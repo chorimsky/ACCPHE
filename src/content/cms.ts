@@ -5,7 +5,8 @@
  * in ./site.ts. Lists whose length the system depends on are fixed: 8 pathway stages, 12 standards, 8 program standards, 3 classifications,
  * vision/mission/purpose. Editors can reword them but not add or remove entries.
  */
-import { ACCREDITATION_OBJECTIVES, CLASSES, ELIGIBILITY, ETHICS, EXECUTIVE, FAQS, GOVERNANCE, GOVERNING_BODIES, OBJECTIVES, PILLARS, POLICIES, PROCESS, PROGRAM_ACCREDITATION as PA, ACCREDITATION_BENEFITS as AB, SOCIAL_LINKS, STANDARDS, VALUES, VMP } from "./site";
+import { DISTINCTIONS, DISTINCTION_GROUPS } from "@/lib/domain";
+import { ACCREDITATION_OBJECTIVES, CLASSES, ELIGIBILITY, ETHICS, EXECUTIVE, FAQS, GOVERNANCE, GOVERNING_BODIES, OBJECTIVES, PILLARS, POLICIES, PROCESS, PROGRAM_ACCREDITATION as PA, ACCREDITATION_BENEFITS as AB, FELLOWS as FL, SOCIAL_LINKS, STANDARDS, VALUES, VMP } from "./site";
 
 export type Field =
   | { name: string; label: string; type: "text"; max?: number; hint?: string }
@@ -257,6 +258,100 @@ export const BLOCKS: BlockDef[] = [
     usedOn: "/accreditation/programs#p-process",
     block: { kind: "list", min: 1, max: 12, item: [t("t", "Step", 160), ta("d", "Description", 3, 800)], itemLabel: (v, i) => `Step ${i + 1}: ${String(v.t)}` },
     default: PA.steps,
+  },
+
+  /* College of Fellows */
+  {
+    key: "fellows.page",
+    group: "College of Fellows",
+    title: "College of Fellows & Distinctions — page text",
+    description: "Introduction, why the College matters, the three pathways, eligibility, integrity statement, evidence, and closing invitation.",
+    usedOn: "/fellows",
+    block: {
+      kind: "object",
+      fields: [
+        t("tagline", "Line under the page title", 200),
+        t("kicker", "Introduction — heading", 200),
+        ta("lead", "Introduction — opening statement", 2, 400),
+        { name: "intro", label: "Introduction", type: "paragraphs", hint: "Separate paragraphs with a blank line." },
+        ta("introClose", "Introduction — closing statement", 2, 400),
+        { name: "why", label: "Why the ACCPHE College of Fellows matters", type: "paragraphs" },
+        ta("pathwaysIntro", "Our fellowship & professional distinctions — introduction", 2, 400),
+        ...DISTINCTION_GROUPS.flatMap((g, i) => [t(`group${i}Sub`, `${["I", "II", "III"][i]}. ${g} — subtitle`, 200), { name: `group${i}`, label: `${["I", "II", "III"][i]}. ${g} — description`, type: "paragraphs" } as Field]),
+        ta("eligibleIntro", "Who may apply or be nominated — introduction", 3, 600),
+        { name: "eligible", label: "Eligible professional backgrounds", type: "lines", hint: "One per line." },
+        { name: "eligibleNotes", label: "Notes under the eligible backgrounds", type: "paragraphs" },
+        t("valueLead", "The value of belonging — heading line", 200),
+        ta("valueIntro", "The value of belonging — introduction", 3, 600),
+        { name: "integrity", label: "Our commitment to integrity and professional standards", type: "paragraphs" },
+        ta("stepsIntro", "How to apply or be nominated — introduction", 2, 400),
+        ta("evidenceIntro", "Evidence of professional achievement — introduction", 3, 600),
+        { name: "evidence", label: "Supporting evidence", type: "lines", hint: "One item per line." },
+        ta("evidenceNote", "Note under the supporting evidence", 2, 400),
+        t("closingLead", "Closing invitation — heading", 200),
+        { name: "closing", label: "Closing invitation", type: "paragraphs" },
+        t("closingTagline", "Closing line", 200),
+      ],
+    },
+    default: {
+      tagline: FL.tagline,
+      kicker: FL.kicker,
+      lead: FL.lead,
+      intro: FL.intro,
+      introClose: FL.introClose,
+      why: FL.why,
+      pathwaysIntro: FL.pathwaysIntro,
+      ...Object.fromEntries(FL.groups.flatMap((g, i) => [[`group${i}Sub`, g.sub], [`group${i}`, g.d]])),
+      eligibleIntro: FL.eligibleIntro,
+      eligible: FL.eligible,
+      eligibleNotes: FL.eligibleNotes,
+      valueLead: FL.valueLead,
+      valueIntro: FL.valueIntro,
+      integrity: FL.integrity,
+      stepsIntro: FL.stepsIntro,
+      evidenceIntro: FL.evidenceIntro,
+      evidence: FL.evidence,
+      evidenceNote: FL.evidenceNote,
+      closingLead: FL.closingLead,
+      closing: FL.closing,
+      closingTagline: FL.closingTagline,
+    },
+  },
+  {
+    key: "fellows.distinctions",
+    group: "College of Fellows",
+    title: "Fellowships, certification and recognitions",
+    description: "The description of each of the eight distinctions. The names and post-nominals are fixed because applications and the register use them.",
+    usedOn: "/fellows#f-distinctions",
+    block: { kind: "list", fixed: true, item: [ta("d", "Description", 4, 1000)], itemLabel: (_v, i) => `${DISTINCTIONS[i]?.t} (${DISTINCTIONS[i]?.code})` },
+    default: FL.distinctions.map((d) => ({ d })),
+  },
+  {
+    key: "fellows.value",
+    group: "College of Fellows",
+    title: "The value of belonging",
+    description: "What recognized individuals receive and can take part in.",
+    usedOn: "/fellows#f-value",
+    block: { kind: "list", min: 1, max: 12, item: [t("t", "Benefit", 160), ta("d", "Description", 3, 800)], itemLabel: (v) => String(v.t) },
+    default: FL.value,
+  },
+  {
+    key: "fellows.steps",
+    group: "College of Fellows",
+    title: "How to apply or be nominated",
+    description: "The steps from choosing a pathway to continued professional standing.",
+    usedOn: "/fellows#f-process",
+    block: { kind: "list", min: 1, max: 12, item: [t("t", "Step", 160), ta("d", "Description", 3, 800)], itemLabel: (v, i) => `Step ${i + 1}: ${String(v.t)}` },
+    default: FL.steps,
+  },
+  {
+    key: "fellows.criteria",
+    group: "College of Fellows",
+    title: "Assessment criteria",
+    description: "The six areas reviewers rate each candidate against. Reviews depend on this list, so its length is fixed.",
+    usedOn: "/fellows#f-evidence",
+    block: { kind: "list", fixed: true, item: [t("t", "Criterion", 160), ta("d", "Description", 3, 800)], itemLabel: (v) => String(v.t) },
+    default: FL.criteria,
   },
 
   /* Standards */

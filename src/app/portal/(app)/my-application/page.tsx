@@ -6,7 +6,7 @@ import { NoteComposer } from "@/components/portal/actions";
 import { ComplianceForm } from "@/components/portal/compliance-form";
 import { docPill, ModuleBody, ModuleHeader, Pill } from "@/components/portal/ui";
 import { UploadButton } from "@/components/portal/widgets";
-import { appTitle, trackOf } from "@/lib/domain";
+import { appTitle, distinctionLabel, trackOf } from "@/lib/domain";
 import { fmtDate } from "@/lib/format";
 import { sendInstitutionMessage, uploadDocument } from "@/server/actions/institution";
 import { requireModule } from "@/server/auth";
@@ -44,6 +44,7 @@ export default async function MyApplicationPage() {
   ]);
   const T = trackOf(app);
   const program = app.kind === "program";
+  const fellow = app.kind === "fellow";
   const declined = app.decision === "Declined";
   const decided = app.stage > T.decisionStage && !declined;
   const accredited = app.stage === T.lastStage && !declined;
@@ -56,7 +57,7 @@ export default async function MyApplicationPage() {
           <div className="relative flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-col gap-1.5">
               <span className="text-haze" style={{ font: "600 12.5px var(--font-sans)" }}>
-                {app.ref} · {program ? T.label : app.pathway} · Submitted {fmtDate(app.submittedAt)}
+                {app.ref} · {program ? T.label : fellow ? `${T.label} · ${distinctionLabel(app.fellowDesignation)}` : app.pathway} · Submitted {fmtDate(app.submittedAt)}
               </span>
               <h2 className="m-0" style={{ font: "500 clamp(24px,2.6vw,30px)/1.15 var(--font-serif)" }}>
                 {appTitle(app)}
@@ -82,7 +83,7 @@ export default async function MyApplicationPage() {
               Next step
             </span>
             <span style={{ font: "500 14.5px/1.55 var(--font-sans)" }}>
-              {declined ? "The authorized body has declined this application. Contact the Secretariat for information on the appeals procedure." : T.actions[app.stage]}
+              {declined ? (fellow ? "The recognition body has not conferred the distinction. Contact the Secretariat for information on the appeals procedure." : "The authorized body has declined this application. Contact the Secretariat for information on the appeals procedure.") : T.actions[app.stage]}
             </span>
           </div>
           <span className="text-haze" style={{ font: "400 12.5px var(--font-sans)" }}>
@@ -161,7 +162,16 @@ export default async function MyApplicationPage() {
               </span>
             </section>
 
-            {decided && (
+            {decided && fellow && (
+              <section className="flex flex-col gap-1.5 rounded border border-line bg-white p-6">
+                <h3 className="p-h3">Continued professional standing</h3>
+                <span className="text-muted" style={{ font: "400 13.5px/1.55 var(--font-sans)" }}>
+                  Recognized individuals remain subject to the College’s professional conduct requirements. Certification holders must also satisfy renewal and continuing professional development requirements. Write
+                  to the Secretariat below about any matter affecting your standing.
+                </span>
+              </section>
+            )}
+            {decided && !fellow && (
               <section className="flex flex-col gap-3.5 rounded border border-line bg-white p-6">
                 <div className="flex flex-col gap-1">
                   <h3 className="p-h3">{program ? "Ongoing quality assurance" : "Maintaining accreditation"}</h3>
@@ -190,7 +200,7 @@ export default async function MyApplicationPage() {
                   n.kind === "institution" ? (
                     <div key={n.id} className="flex max-w-[85%] flex-col gap-1 self-end rounded bg-navy px-3.5 py-3 text-mist">
                       <span className="text-haze" style={{ font: "600 11.5px var(--font-sans)" }}>
-                        {program ? "You" : "Your institution"} · {fmtDate(n.createdAt)}
+                        {program || fellow ? "You" : "Your institution"} · {fmtDate(n.createdAt)}
                       </span>
                       <span className="whitespace-pre-wrap" style={{ font: "400 14px/1.55 var(--font-sans)" }}>
                         {n.text}
@@ -211,7 +221,9 @@ export default async function MyApplicationPage() {
               <NoteComposer placeholder="Write to the Secretariat…" buttons={[{ label: "Send message", primary: true, run: sendInstitutionMessage }]} />
             </section>
             <p className="m-0 text-muted" style={{ font: "400 12.5px/1.6 var(--font-sans)" }}>
-              {program
+              {fellow
+                ? "Submitting an application does not guarantee recognition. The College’s distinctions are recognition issued by ACCPHE within its own professional framework; they are not academic degrees, professional licenses, governmental endorsements, or institutional accreditation."
+                : program
                 ? "Participation in the review does not constitute accreditation. Program accreditation applies only to the approved program, not to the provider or its other offerings."
                 : "Participation in the evaluation pathway does not constitute accreditation. Institutions must represent their status accurately at every stage."}
             </p>

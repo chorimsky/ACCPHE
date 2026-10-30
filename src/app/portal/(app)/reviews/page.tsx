@@ -14,7 +14,7 @@ export default async function ReviewsPage() {
       <ModuleHeader mod="reviews" />
       <ModuleBody>
         <InfoNote>
-          Evaluate each institution against the twelve institutional standards, and each program against the eight program standards, using the evidence provided. Declare any conflict of interest before opening an evaluation. Reports are confidential and are submitted to the
+          Evaluate each institution against the twelve institutional standards, each program against the eight program standards, and each College of Fellows candidate against the six assessment criteria, using the evidence provided. Declare any conflict of interest before opening an evaluation. Reports are confidential and are submitted to the
           Secretariat and the Accreditation Commission.
         </InfoNote>
         {rows.length ? (
@@ -36,7 +36,7 @@ export default async function ReviewsPage() {
                   </div>
                   <span style={{ font: "600 18px/1.3 var(--font-serif)", color: "var(--color-navy)" }}>{appTitle(a)}</span>
                   <span className="text-muted" style={{ font: "400 13px var(--font-sans)" }}>
-                    {a.kind === "program" ? `${a.name} · ${a.country} · ${trackOf(a).label}` : `${a.country} · ${a.pathway}`}
+                    {a.kind === "program" ? `${a.name} · ${a.country} · ${trackOf(a).label}` : a.kind === "fellow" ? `${a.country} · ${trackOf(a).label} · ${a.fellowDesignation}` : `${a.country} · ${a.pathway}`}
                   </span>
                   <div className="flex flex-col gap-1.5 pt-1.5">
                     <span className="block h-1.5 overflow-hidden rounded-[3px] bg-cloud">

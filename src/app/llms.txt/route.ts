@@ -27,6 +27,8 @@ export async function GET() {
 - [Accreditation](${abs("/accreditation")}): objectives, eligibility, evaluation pathway, classifications, maintaining accreditation, FAQ.
 - [Independent Program Accreditation & Recognition](${abs("/accreditation/programs")}): program-level accreditation or recognition for certificate, diploma, CPD, executive, ministry and professional training programs; eight program standards; six-step process; disclosure (not government approval or USDE/CHEA recognition). Apply: ${abs("/accreditation/programs/apply")}.
 - [Directory of Approved Programs](${abs("/directory/programs")}): every approved program with provider, status awarded (Accredited Program / Recognized Program), validity period and verification number (ACCPHE-P-YYYY-NNNN). Program accreditation applies only to the approved program, not to the provider.
+- [College of Fellows & Distinctions](${abs("/fellows")}): the ACCPHE International College of Fellows & Professional Distinctions — Council Fellowship (FACCPHE, SFACCPHE, DFACCPHE, FCLM), Professional Certification (CCHEP) and Distinguished Council Recognition (DCEL, DCS-ACCPHE, DCME); not academic degrees, licenses or accreditation. Apply or nominate: ${abs("/fellows/apply")}.
+- [College of Fellows Directory](${abs("/directory/fellows")}): credential verification register of recipients, with distinction, date conferred, status and verification number (ACCPHE-F-YYYY-NNNN).
 - [Standards & Policies](${abs("/standards")}): twelve standards, criteria and evidence, Code of Ethics, complaints and appeals.
 - [Governance](${abs("/governance")}): governing bodies and executive structure.
 - [Institutional Directory](${abs("/directory")}): verify membership and accreditation status.

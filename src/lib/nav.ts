@@ -3,6 +3,7 @@ export const NAV = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About Us" },
   { href: "/accreditation", label: "Accreditation" },
+  { href: "/fellows", label: "College of Fellows & Distinctions" },
   { href: "/standards", label: "Standards & Policies" },
   { href: "/governance", label: "Governance" },
   { href: "/directory", label: "Member Institutions" },

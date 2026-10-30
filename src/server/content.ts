@@ -2,9 +2,10 @@ import "server-only";
 import { cache } from "react";
 import { z } from "zod";
 import { db } from "@/db";
-import { contentBlocks } from "@/db/schema";
+import { contentBlocks, type AppKind } from "@/db/schema";
 import { BLOCK_BY_KEY, type Block, type Field } from "@/content/cms";
 import { CLASSES, PILLARS, PROGRAM_ACCREDITATION, VMP, type TextItem } from "@/content/site";
+import { DISTINCTIONS, DISTINCTION_GROUPS } from "@/lib/domain";
 
 const str = (max: number, label: string) => z.string().trim().max(max, `${label} is too long.`);
 const req = (max: number, label: string) => str(max, label).min(1, `${label} is required.`);
@@ -72,8 +73,9 @@ export type Policy = { title: string; lede: string; sections: { h: string; p: st
 
 export const getStandards = () => getBlock<Standard[]>("standards");
 export const getStandardTitles = async () => (await getStandards()).map((s) => s.t);
-/** The standards reviewers rate: the twelve institutional standards, or the eight program standards. */
-export const getStandardTitlesFor = async (kind: "institution" | "program") => (kind === "program" ? (await getBlock<TextItem[]>("programs.standards")).map((s) => s.t) : getStandardTitles());
+/** What reviewers rate: the twelve institutional standards, the eight program standards, or the six College assessment criteria. */
+export const getStandardTitlesFor = async (kind: AppKind) =>
+  kind === "program" ? (await getBlock<TextItem[]>("programs.standards")).map((s) => s.t) : kind === "fellow" ? (await getBlock<TextItem[]>("fellows.criteria")).map((s) => s.t) : getStandardTitles();
 export const getStandardsMeta = () => getBlock<StandardsMeta>("standards.meta");
 export const getFaqs = () => getBlock<{ q: string; a: string }[]>("faqs");
 export const getProcess = () => getBlock<TextItem[]>("process");
@@ -152,4 +154,72 @@ export async function getSocial(): Promise<SocialLink[]> {
         return false;
       }
     });
+}
+
+export type FellowsPage = {
+  tagline: string;
+  kicker: string;
+  lead: string;
+  intro: string[];
+  introClose: string;
+  why: string[];
+  pathwaysIntro: string;
+  groups: { t: string; sub: string; d: string[] }[];
+  distinctions: { code: string; t: string; group: string; d: string }[];
+  eligibleIntro: string;
+  eligible: string[];
+  eligibleNotes: string[];
+  valueLead: string;
+  valueIntro: string;
+  value: TextItem[];
+  integrity: string[];
+  stepsIntro: string;
+  steps: TextItem[];
+  evidenceIntro: string;
+  evidence: string[];
+  evidenceNote: string;
+  closingLead: string;
+  closing: string[];
+  closingTagline: string;
+  criteria: TextItem[];
+};
+
+/** Everything shown on /fellows, with portal edits applied. */
+export async function getFellowsPage(): Promise<FellowsPage> {
+  const [p, ds, value, steps, criteria] = await Promise.all([
+    getBlock<Record<string, string | string[]>>("fellows.page"),
+    getBlock<{ d: string }[]>("fellows.distinctions"),
+    getBlock<TextItem[]>("fellows.value"),
+    getBlock<TextItem[]>("fellows.steps"),
+    getBlock<TextItem[]>("fellows.criteria"),
+  ]);
+  const str = (k: string) => String(p[k] ?? "");
+  const arr = (k: string) => (Array.isArray(p[k]) ? (p[k] as string[]) : []);
+  return {
+    tagline: str("tagline"),
+    kicker: str("kicker"),
+    lead: str("lead"),
+    intro: arr("intro"),
+    introClose: str("introClose"),
+    why: arr("why"),
+    pathwaysIntro: str("pathwaysIntro"),
+    groups: DISTINCTION_GROUPS.map((t, i) => ({ t, sub: str(`group${i}Sub`), d: arr(`group${i}`) })),
+    distinctions: DISTINCTIONS.map((d, i) => ({ ...d, d: ds[i]?.d ?? "" })),
+    eligibleIntro: str("eligibleIntro"),
+    eligible: arr("eligible"),
+    eligibleNotes: arr("eligibleNotes"),
+    valueLead: str("valueLead"),
+    valueIntro: str("valueIntro"),
+    value,
+    integrity: arr("integrity"),
+    stepsIntro: str("stepsIntro"),
+    steps,
+    evidenceIntro: str("evidenceIntro"),
+    evidence: arr("evidence"),
+    evidenceNote: str("evidenceNote"),
+    closingLead: str("closingLead"),
+    closing: arr("closing"),
+    closingTagline: str("closingTagline"),
+    criteria,
+  };
 }

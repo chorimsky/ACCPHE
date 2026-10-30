@@ -111,5 +111,23 @@ export const MIGRATIONS: BundledMigration[] = [
       "ALTER TABLE `records` ADD `website` text DEFAULT '' NOT NULL;",
       "UPDATE `records` SET `website` = (SELECT `website` FROM `applications` WHERE `applications`.`id` = `records`.`application_id`) WHERE `application_id` IS NOT NULL AND `website` = '' AND EXISTS (SELECT 1 FROM `applications` WHERE `applications`.`id` = `records`.`application_id`);"
     ]
+  },
+  {
+    "tag": "0006_sloppy_toro",
+    "when": 1793338486764,
+    "hash": "655cbf9769849157050fba74679e5f88dce335f8cb06213c26092151013056a1",
+    "statements": [
+      "CREATE TABLE `fellow_events` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`fellow_id` text NOT NULL,\n\t`status` text NOT NULL,\n\t`designation` text NOT NULL,\n\t`effective` text NOT NULL,\n\t`note` text DEFAULT '' NOT NULL,\n\t`created_at` integer NOT NULL,\n\tFOREIGN KEY (`fellow_id`) REFERENCES `fellows`(`id`) ON UPDATE no action ON DELETE cascade\n);",
+      "CREATE INDEX `fellow_events_fellow_idx` ON `fellow_events` (`fellow_id`,`created_at`);",
+      "CREATE TABLE `fellows` (\n\t`id` text PRIMARY KEY NOT NULL,\n\t`slug` text NOT NULL,\n\t`verification` text NOT NULL,\n\t`honorific` text DEFAULT '' NOT NULL,\n\t`name` text NOT NULL,\n\t`designation` text NOT NULL,\n\t`country` text NOT NULL,\n\t`position` text DEFAULT '' NOT NULL,\n\t`affiliation` text DEFAULT '' NOT NULL,\n\t`citation` text DEFAULT '' NOT NULL,\n\t`effective` text DEFAULT '' NOT NULL,\n\t`review` text DEFAULT '' NOT NULL,\n\t`status` text DEFAULT 'Draft' NOT NULL,\n\t`verified` integer DEFAULT false NOT NULL,\n\t`application_id` text,\n\t`published_at` integer,\n\t`created_at` integer NOT NULL,\n\t`updated_at` integer NOT NULL,\n\tFOREIGN KEY (`application_id`) REFERENCES `applications`(`id`) ON UPDATE no action ON DELETE set null\n);",
+      "CREATE UNIQUE INDEX `fellows_slug_uq` ON `fellows` (`slug`);",
+      "CREATE UNIQUE INDEX `fellows_verification_uq` ON `fellows` (`verification`);",
+      "CREATE INDEX `fellows_status_idx` ON `fellows` (`status`);",
+      "ALTER TABLE `applications` ADD `fellow_designation` text DEFAULT '' NOT NULL;",
+      "ALTER TABLE `applications` ADD `fellow_route` text DEFAULT '' NOT NULL;",
+      "ALTER TABLE `applications` ADD `fellow_email` text DEFAULT '' NOT NULL;",
+      "ALTER TABLE `applications` ADD `fellow_position` text DEFAULT '' NOT NULL;",
+      "ALTER TABLE `applications` ADD `fellow_affiliation` text DEFAULT '' NOT NULL;"
+    ]
   }
 ];

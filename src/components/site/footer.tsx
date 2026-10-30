@@ -20,9 +20,11 @@ const COLS = [
     { label: "Standards & Policies", href: "/standards" },
     { label: "Apply for Accreditation", href: "/apply" },
     { label: "Member Institutions", href: "/directory" },
+    { label: "College of Fellows & Distinctions", href: "/fellows" },
   ],
   [
     { label: "Verify an Institution", href: "/directory" },
+    { label: "Verify a Credential", href: "/directory/fellows" },
     { label: "Code of Ethics", href: "/standards#s-ethics" },
     { label: "Complaints & Appeals", href: "/standards#s-appeals" },
     { label: "Accreditation FAQ", href: "/accreditation#c-faq" },

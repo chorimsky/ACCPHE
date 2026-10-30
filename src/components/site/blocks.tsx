@@ -136,14 +136,15 @@ export function AsideBox({ title, text, href, cta }: { title: string; text: stri
   );
 }
 
-/** Switch between the two public directories (institutions and approved programs). */
-export function DirectorySwitch({ current }: { current: "institutions" | "programs" }) {
+/** Switch between the public directories (institutions, approved programs, College of Fellows). */
+export function DirectorySwitch({ current }: { current: "institutions" | "programs" | "fellows" }) {
   const items = [
     { key: "institutions", href: "/directory", label: "Institutions" },
     { key: "programs", href: "/directory/programs", label: "Approved programs" },
+    { key: "fellows", href: "/directory/fellows", label: "College of Fellows" },
   ] as const;
   return (
-    <nav aria-label="Directory" className="inline-flex self-start border border-line bg-white p-1">
+    <nav aria-label="Directory" className="inline-flex max-w-full flex-wrap self-start border border-line bg-white p-1">
       {items.map((i) => (
         <Link
           key={i.key}

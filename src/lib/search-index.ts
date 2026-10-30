@@ -10,6 +10,9 @@ const PAGES: [string, string, string][] = [
   ["directory", "Institutional Directory", "/directory"],
   ["programDirectory", "Directory of Approved Programs", "/directory/programs"],
   ["programApply", "Apply for Program Accreditation", "/accreditation/programs/apply"],
+  ["fellows", "College of Fellows & Distinctions", "/fellows"],
+  ["fellowsApply", "Apply or Nominate — College of Fellows", "/fellows/apply"],
+  ["fellowsDirectory", "College of Fellows Directory", "/directory/fellows"],
   ["news", "News & Insights", "/news"],
   ["apply", "Apply", "/apply"],
   ["contact", "Contact", "/contact"],
@@ -27,8 +30,9 @@ export function buildSearchIndex(d: {
   values: { t: string; d: string }[];
   institutions: { slug: string; name: string; country: string; cls: string; status: string }[];
   programs?: { slug: string; title: string; provider: string; award: string; verification: string; status: string }[];
+  fellows?: { slug: string; honorific: string; name: string; designation: string; verification: string; status: string }[];
 }): SearchItem[] {
-  const { news, standards: STANDARDS, faqs: FAQS, governance: GOVERNANCE, values: VALUES, institutions, programs = [] } = d;
+  const { news, standards: STANDARDS, faqs: FAQS, governance: GOVERNANCE, values: VALUES, institutions, programs = [], fellows = [] } = d;
   return [
     ...PAGES.map(([k, t, href]) => ({ kind: "Page", t, d: SEO[k]?.[1] ?? "", href })),
     ...STANDARDS.map((s, i) => ({ kind: `Standard ${i + 1}`, t: s.t, d: s.s, href: `/standards#standard-${i + 1}` })),
@@ -39,5 +43,6 @@ export function buildSearchIndex(d: {
     ...VALUES.map((v) => ({ kind: "Value", t: v.t, d: v.d, href: "/about#a-values" })),
     ...institutions.map((r) => ({ kind: "Institution", t: r.name, d: `${r.country} · ${r.cls}${r.status === "Published" ? "" : ` · ${r.status}`}`, href: `/directory/${r.slug}` })),
     ...programs.map((r) => ({ kind: "Program", t: r.title, d: `${r.provider} · ${r.award} · ${r.verification}${r.status === "Published" ? "" : ` · ${r.status}`}`, href: `/directory/programs/${r.slug}` })),
+    ...fellows.map((r) => ({ kind: "Fellow", t: `${[r.honorific, r.name].filter(Boolean).join(" ")}, ${r.designation}`, d: `${r.verification}${r.status === "Published" ? "" : ` · ${r.status}`}`, href: `/directory/fellows/${r.slug}` })),
   ];
 }

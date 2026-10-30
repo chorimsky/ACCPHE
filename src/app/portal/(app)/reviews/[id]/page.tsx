@@ -36,7 +36,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
         <section className="flex flex-wrap items-end justify-between gap-4 rounded border border-line bg-white p-6">
           <div className="flex flex-col gap-1.5">
             <span className="p-meta">
-              {a.ref} · {a.kind === "program" ? `${T.label} · ${a.name}` : a.pathway} · {a.country}
+              {a.ref} · {a.kind === "program" ? `${T.label} · ${a.name}` : a.kind === "fellow" ? `${T.label} · ${a.fellowDesignation}` : a.pathway} · {a.country}
             </span>
             <h2 className="p-h2">{appTitle(a)}</h2>
           </div>

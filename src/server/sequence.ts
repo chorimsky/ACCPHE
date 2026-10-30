@@ -28,6 +28,16 @@ export async function nextProgramVerification(year = new Date().getUTCFullYear()
   return `ACCPHE-P-${year}-${String(await nextNumber(`prgv:${year}`)).padStart(4, "0")}`;
 }
 
+/** FEL-2026-0001 (College of Fellows applications and nominations) */
+export async function nextFellowRef(year = new Date().getUTCFullYear()) {
+  return `FEL-${year}-${String(await nextNumber(`fel:${year}`)).padStart(4, "0")}`;
+}
+
+/** ACCPHE-F-2026-0001: public verification number of a College credential or distinction */
+export async function nextFellowVerification(year = new Date().getUTCFullYear()) {
+  return `ACCPHE-F-${year}-${String(await nextNumber(`felv:${year}`)).padStart(4, "0")}`;
+}
+
 /** CMP-2026-001 / APL-2026-001 */
 export async function nextCaseRef(type: "Complaint" | "Appeal", year = new Date().getUTCFullYear()) {
   const prefix = type === "Appeal" ? "APL" : "CMP";

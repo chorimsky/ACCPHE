@@ -100,7 +100,7 @@ export const CLASSIFICATIONS = ["Associate Member", "Accredited Institution", "D
 export type Classification = (typeof CLASSIFICATIONS)[number];
 
 /** What an application evaluates: a whole institution, or one program (Independent Program Accreditation). */
-export const APP_KINDS = ["institution", "program"] as const;
+export const APP_KINDS = ["institution", "program", "fellow"] as const;
 export type AppKind = (typeof APP_KINDS)[number];
 
 export const applications = sqliteTable(
@@ -130,6 +130,12 @@ export const applications = sqliteTable(
     programDelivery: text("program_delivery").notNull().default(""),
     programDuration: text("program_duration").notNull().default(""),
     programLearners: text("program_learners").notNull().default(""),
+    /** College of Fellows only (kind = "fellow"): name/country/website describe the candidate, rep* the person submitting (the candidate or a nominator). */
+    fellowDesignation: text("fellow_designation").notNull().default(""),
+    fellowRoute: text("fellow_route").notNull().default(""),
+    fellowEmail: text("fellow_email").notNull().default(""),
+    fellowPosition: text("fellow_position").notNull().default(""),
+    fellowAffiliation: text("fellow_affiliation").notNull().default(""),
     /** Index into the application's track stages (src/lib/domain.ts TRACKS[kind].stages). */
     stage: integer("stage").notNull().default(0),
     officerId: text("officer_id").references(() => users.id, { onDelete: "set null" }),
@@ -235,6 +241,8 @@ export const VOTES = [
   "Confer Distinguished Membership",
   "Award program accreditation",
   "Grant program recognition",
+  "Confer the distinction sought",
+  "Confer a different distinction",
   "Decline",
   "Defer for further information",
   "Recused",
@@ -547,3 +555,59 @@ export const programRecordEvents = sqliteTable(
   },
   (t) => [index("program_record_events_program_idx").on(t.programId, t.createdAt)],
 );
+
+/* ─────────── College of Fellows & Professional Distinctions ─────────── */
+
+/** Post-nominal codes of the College's distinctions (titles and groups in src/lib/domain.ts DISTINCTIONS). */
+export const DISTINCTION_CODES = ["FACCPHE", "SFACCPHE", "DFACCPHE", "FCLM", "CCHEP", "DCEL", "DCS-ACCPHE", "DCME"] as const;
+export type DistinctionCode = (typeof DISTINCTION_CODES)[number];
+
+/** The College's credential verification register (public at /directory/fellows when published). */
+export const fellows = sqliteTable(
+  "fellows",
+  {
+    id: id(),
+    slug: text("slug").notNull(),
+    /** Unique public verification number, e.g. ACCPHE-F-2026-0001 */
+    verification: text("verification").notNull(),
+    /** e.g. "Rev. Dr." */
+    honorific: text("honorific").notNull().default(""),
+    name: text("name").notNull(),
+    designation: text("designation", { enum: DISTINCTION_CODES }).notNull(),
+    country: text("country").notNull(),
+    position: text("position").notNull().default(""),
+    affiliation: text("affiliation").notNull().default(""),
+    /** Short public citation of the contribution recognized */
+    citation: text("citation").notNull().default(""),
+    /** YYYY-MM-DD date conferred */
+    effective: text("effective").notNull().default(""),
+    /** YYYY-MM-DD renewal date (certifications); empty when the distinction does not expire */
+    review: text("review").notNull().default(""),
+    status: text("status", { enum: RECORD_STATUS }).notNull().default("Draft"),
+    verified: integer("verified", { mode: "boolean" }).notNull().default(false),
+    applicationId: text("application_id").references(() => applications.id, { onDelete: "set null" }),
+    publishedAt: ts("published_at"),
+    createdAt: now(),
+    updatedAt: ts("updated_at").notNull().$defaultFn(() => new Date()),
+  },
+  (t) => [uniqueIndex("fellows_slug_uq").on(t.slug), uniqueIndex("fellows_verification_uq").on(t.verification), index("fellows_status_idx").on(t.status)],
+);
+
+/** Public history of a register entry (conferral and every later change of status or distinction). */
+export const fellowEvents = sqliteTable(
+  "fellow_events",
+  {
+    id: id(),
+    fellowId: text("fellow_id")
+      .notNull()
+      .references(() => fellows.id, { onDelete: "cascade" }),
+    status: text("status", { enum: RECORD_STATUS }).notNull(),
+    designation: text("designation", { enum: DISTINCTION_CODES }).notNull(),
+    effective: text("effective").notNull(),
+    note: text("note").notNull().default(""),
+    createdAt: now(),
+  },
+  (t) => [index("fellow_events_fellow_idx").on(t.fellowId, t.createdAt)],
+);
+
+export type Fellow = typeof fellows.$inferSelect;

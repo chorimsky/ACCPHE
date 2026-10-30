@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { and, count, desc, eq, inArray, isNull, lt, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { applicationNotes, applications, articles, auditLog, cases, messages, programRecords, records, requirements, reviews, users, votes } from "@/db/schema";
+import { applicationNotes, applications, articles, auditLog, cases, messages, fellows, programRecords, records, requirements, reviews, users, votes } from "@/db/schema";
 import { Greeting } from "@/components/portal/greeting";
 import { Card, ModuleBody, ModuleHeader } from "@/components/portal/ui";
 import { appTitle, awaitingDecision, CASE_CLOSED, CASE_STAGES, COMMISSION_QUORUM, isOpen, ROLE_INFO, TRACKS, trackOf, type ModuleKey } from "@/lib/domain";
@@ -19,26 +19,28 @@ export default async function OverviewPage() {
 
   const apps = has("applications") ? await db.select().from(applications) : [];
   const n = async (q: Promise<{ n: number }[]>) => (await q)[0]?.n ?? 0;
-  const [publishedRecords, publishedPrograms, publishedArticles, openCases, unread] = await Promise.all([
+  const [publishedRecords, publishedPrograms, publishedFellows, publishedArticles, openCases, unread] = await Promise.all([
     has("directory") ? n(db.select({ n: count() }).from(records).where(eq(records.status, "Published"))) : 0,
     has("directory") ? n(db.select({ n: count() }).from(programRecords).where(eq(programRecords.status, "Published"))) : 0,
+    has("directory") ? n(db.select({ n: count() }).from(fellows).where(eq(fellows.status, "Published"))) : 0,
     has("news") ? n(db.select({ n: count() }).from(articles).where(eq(articles.status, "Published"))) : 0,
     has("cases") ? n(db.select({ n: count() }).from(cases).where(lt(cases.stage, CASE_CLOSED))) : 0,
     has("messages") ? n(db.select({ n: count() }).from(messages).where(and(eq(messages.read, false), isNull(messages.archivedAt)))) : 0,
   ]);
 
   const kpis = [
-    { mod: "applications" as const, n: apps.filter((a) => a.decision !== "Declined" && a.stage <= (a.kind === "program" ? 0 : 1)).length, t: "New inquiries, applications and eligibility reviews", href: "/portal/applications" },
-    { mod: "applications" as const, n: apps.filter((a) => a.decision !== "Declined" && a.stage > (a.kind === "program" ? 0 : 1) && a.stage < trackOf(a).decisionStage).length, t: "Applications in evaluation", href: "/portal/applications" },
+    { mod: "applications" as const, n: apps.filter((a) => a.decision !== "Declined" && a.stage <= (a.kind === "institution" ? 1 : 0)).length, t: "New inquiries, applications and eligibility reviews", href: "/portal/applications" },
+    { mod: "applications" as const, n: apps.filter((a) => a.decision !== "Declined" && a.stage > (a.kind === "institution" ? 1 : 0) && a.stage < trackOf(a).decisionStage).length, t: "Applications in evaluation", href: "/portal/applications" },
     { mod: "applications" as const, n: apps.filter(awaitingDecision).length, t: "Awaiting accreditation decision", href: "/portal/decisions" },
     { mod: "directory" as const, n: publishedRecords, t: "Published directory records", href: "/portal/directory?status=Published" },
     { mod: "directory" as const, n: publishedPrograms, t: "Published program records", href: "/portal/directory?kind=programs&status=Published" },
+    { mod: "directory" as const, n: publishedFellows, t: "College of Fellows register entries", href: "/portal/directory?kind=fellows&status=Published" },
     { mod: "news" as const, n: publishedArticles, t: "Published articles", href: "/portal/news?status=Published" },
     { mod: "cases" as const, n: openCases, t: "Open complaints and appeals", href: "/portal/cases" },
     { mod: "messages" as const, n: unread, t: "Unread messages", href: "/portal/messages" },
   ].filter((k) => has(k.mod));
 
-  const pipelines = (["institution", "program"] as const).map((k) => {
+  const pipelines = (["institution", "program", "fellow"] as const).map((k) => {
     const list = apps.filter((a) => a.kind === k && a.decision !== "Declined");
     const counts = TRACKS[k].stages.map((_, i) => list.filter((a) => a.stage === i).length);
     return { T: TRACKS[k], counts, max: Math.max(1, ...counts), total: list.length };
@@ -58,7 +60,7 @@ export default async function OverviewPage() {
     const href = (id: string) => `/portal/applications/${id}`;
     for (const a of open.filter(awaitingDecision)) att.push({ k: "Decision required", t: appTitle(a), href: href(a.id) });
     for (const a of open.filter((a) => !a.officerId)) att.push({ k: "Assign an officer", t: appTitle(a), href: href(a.id) });
-    for (const a of open.filter((a) => latest.get(a.id) === "institution")) att.push({ k: a.kind === "program" ? "Provider awaiting reply" : "Institution awaiting reply", t: appTitle(a), href: href(a.id) });
+    for (const a of open.filter((a) => latest.get(a.id) === "institution")) att.push({ k: a.kind === "program" ? "Provider awaiting reply" : a.kind === "fellow" ? "Candidate awaiting reply" : "Institution awaiting reply", t: appTitle(a), href: href(a.id) });
     for (const id of new Set(submittedDocs.map((d) => d.applicationId))) {
       const a = open.find((x) => x.id === id);
       att.push({ k: "Review submitted documents", t: a ? appTitle(a) : "", href: href(id) });
@@ -82,6 +84,10 @@ export default async function OverviewPage() {
     for (const r of progs.filter((x) => x.status === "Draft")) att.push({ k: "Verify and publish program record", t: r.title, href: `/portal/directory/programs/${r.id}` });
     for (const r of progs.filter((x) => x.status === "Published" && x.review && x.review <= soon))
       att.push({ k: r.review < today ? `Program validity ended · ${fmtDate(r.review)}` : `Program renewal due · ${fmtDate(r.review)}`, t: r.title, href: `/portal/directory/programs/${r.id}` });
+    const register = await db.select().from(fellows);
+    for (const r of register.filter((x) => x.status === "Draft")) att.push({ k: "Verify and publish register entry", t: `${r.name}, ${r.designation}`, href: `/portal/directory/fellows/${r.id}` });
+    for (const r of register.filter((x) => x.status === "Published" && x.review && x.review <= soon))
+      att.push({ k: r.review < today ? `Certification lapsed · ${fmtDate(r.review)}` : `Certification renewal due · ${fmtDate(r.review)}`, t: `${r.name}, ${r.designation}`, href: `/portal/directory/fellows/${r.id}` });
   }
   if (has("cases")) {
     for (const c of await db.select().from(cases).where(lt(cases.stage, CASE_CLOSED)).orderBy(desc(cases.receivedAt)))
@@ -141,9 +147,9 @@ export default async function OverviewPage() {
               {pipelines.map(({ T, counts, max, total }) => (
                 <Card key={T.kind} className="gap-[18px]">
                   <div className="flex items-baseline justify-between gap-3">
-                    <h2 className="p-h3">{T.kind === "program" ? "Program accreditation pipeline" : "Accreditation pipeline"}</h2>
+                    <h2 className="p-h3">{T.kind === "program" ? "Program accreditation pipeline" : T.kind === "fellow" ? "College of Fellows pipeline" : "Accreditation pipeline"}</h2>
                     <span className="text-muted" style={{ font: "400 12.5px var(--font-sans)" }}>
-                      {total} {T.kind === "program" ? "program" : "institutional"} application{total === 1 ? "" : "s"} by current stage
+                      {total} {T.kind === "program" ? "program" : T.kind === "fellow" ? "fellowship" : "institutional"} application{total === 1 ? "" : "s"} by current stage
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
@@ -152,7 +158,7 @@ export default async function OverviewPage() {
                       return (
                         <Link
                           key={s}
-                          href={`/portal/applications?${T.kind === "program" ? "kind=program&" : ""}stage=${i}`}
+                          href={`/portal/applications?${T.kind === "institution" ? "" : `kind=${T.kind}&`}stage=${i}`}
                           className="grid grid-cols-[minmax(150px,230px)_1fr_28px] items-center gap-3.5 rounded-[3px] px-1.5 py-2 no-underline hover:bg-mist"
                         >
                           <span className="flex gap-2 text-navy" style={{ font: "500 13.5px var(--font-sans)" }}>

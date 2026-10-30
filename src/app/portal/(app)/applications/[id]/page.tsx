@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { applications, cases, programRecords, records, users } from "@/db/schema";
+import { applications, cases, fellows, programRecords, records, users } from "@/db/schema";
 import { ActionButton, NoteComposer } from "@/components/portal/actions";
 import { appPill, Back, Card, docPill, ModuleBody, ModuleHeader, Pill, Stepper, type PillTone } from "@/components/portal/ui";
 import { AdvanceButton, CheckItem, PickAndRun, SaveSelect, UploadButton } from "@/components/portal/widgets";
 import { addApplicationNote, assignReviewer, decide, moveStage, removeReviewer, setOfficer, setRequirementStatus, staffUpload, toggleCheck } from "@/server/actions/applications";
-import { appTitle, COMMISSION_QUORUM, trackOf } from "@/lib/domain";
+import { appTitle, COMMISSION_QUORUM, distinctionLabel, trackOf } from "@/lib/domain";
 import { fmtDate, fmtRelative } from "@/lib/format";
 import { requireModule } from "@/server/auth";
 import { applicationDetail, groupFiles, officerOptions } from "@/server/services/applications";
@@ -38,6 +38,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
   const { app } = d;
   const T = trackOf(app);
   const program = app.kind === "program";
+  const fellow = app.kind === "fellow";
   const NOTE_TAG = noteTag(T.party);
   const [officers, reviewerPool, linkedAccounts, linkedCases, linkedRecord] = await Promise.all([
     officerOptions(),
@@ -46,10 +47,22 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
     db.select({ id: cases.id, ref: cases.ref, type: cases.type, subject: cases.subject, stage: cases.stage }).from(cases).where(eq(cases.applicationId, id)),
     program
       ? db.select({ id: programRecords.id, status: programRecords.status, label: programRecords.verification }).from(programRecords).where(eq(programRecords.applicationId, id))
-      : db.select({ id: records.id, status: records.status, label: records.name }).from(records).where(eq(records.applicationId, id)),
+      : fellow
+        ? db.select({ id: fellows.id, status: fellows.status, label: fellows.verification }).from(fellows).where(eq(fellows.applicationId, id))
+        : db.select({ id: records.id, status: records.status, label: records.name }).from(records).where(eq(records.applicationId, id)),
   ]);
   const record = linkedRecord[0];
-  const recordHref = record ? (program ? `/portal/directory/programs/${record.id}` : `/portal/directory/${record.id}`) : program ? "/portal/directory?kind=programs" : "/portal/directory";
+  const recordHref = record
+    ? program
+      ? `/portal/directory/programs/${record.id}`
+      : fellow
+        ? `/portal/directory/fellows/${record.id}`
+        : `/portal/directory/${record.id}`
+    : program
+      ? "/portal/directory?kind=programs"
+      : fellow
+        ? "/portal/directory?kind=fellows"
+        : "/portal/directory";
   const declined = app.decision === "Declined";
   const decided = declined || app.stage > T.decisionStage;
   const atDecision = !declined && app.stage === T.decisionStage && !app.decision;
@@ -66,7 +79,23 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
     .join(" · ");
   const counted = d.votes.filter((v) => v.vote.vote !== "Recused").length;
   const assigned = new Set(d.reviews.map((r) => r.reviewer.id));
-  const info: [string, string][] = [
+  const info: [string, string][] = fellow
+    ? [
+        ["Reference", app.ref],
+        ["Submission", app.fellowRoute === "Nomination" ? `Nomination by ${[app.repName, app.repPosition].filter(Boolean).join(", ")}` : "Application by the candidate"],
+        ["Distinction sought", distinctionLabel(app.fellowDesignation)],
+        ["Candidate", app.name],
+        ["Position", app.fellowPosition],
+        ["Institution or organization", app.fellowAffiliation],
+        ["Country", app.country],
+        ["Candidate’s email", app.fellowEmail],
+        ["Professional profile", app.website],
+        ...(app.fellowRoute === "Nomination" ? ([["Nominator’s email", app.repEmail]] as [string, string][]) : []),
+        ["Telephone", app.repPhone],
+        ["Submitted", fmtDate(app.submittedAt)],
+        ["Source", app.source === "website" ? "Public application form" : "Logged by the Secretariat"],
+      ]
+    : [
     ["Reference", app.ref],
     ...(program
       ? ([
@@ -89,7 +118,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
     ["Telephone", app.repPhone],
     ["Submitted", fmtDate(app.submittedAt)],
     ["Source", app.source === "website" ? "Public inquiry form" : "Logged by the Secretariat"],
-  ];
+      ];
 
   return (
     <>
@@ -162,12 +191,14 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                   <span className="text-muted" style={{ font: "400 13px/1.55 var(--font-sans)" }}>
                     {program
                       ? "Awards create a draft program record with a verification number. It becomes public only after verification and publication."
-                      : "Awards create a draft directory record. It becomes public only after verification and publication."}
+                      : fellow
+                        ? `Sought: ${distinctionLabel(app.fellowDesignation)}. Conferring a distinction creates a draft register entry with a verification number; it becomes public only after verification and publication.`
+                        : "Awards create a draft directory record. It becomes public only after verification and publication."}
                     {d.votes.length > 0 && ` Commission: ${counted} vote${counted === 1 ? "" : "s"} recorded (quorum ${COMMISSION_QUORUM}).`}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {T.decisions.map((c) => (
-                      <ActionButton key={c.value} action={decide.bind(null, app.id, c.value)} confirm={`Record the decision: ${c.value}?`} className="p-btn" pendingLabel="Recording…">
+                      <ActionButton key={c.value} action={decide.bind(null, app.id, c.value)} confirm={`Record the decision: ${fellow ? distinctionLabel(c.value) : c.value}?`} className="p-btn" pendingLabel="Recording…">
                         {c.label}
                       </ActionButton>
                     ))}
@@ -188,12 +219,12 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                     {declined
                       ? "This application was declined by the authorized body."
                       : app.decision
-                        ? `Decision recorded: ${app.decision}.${record ? ` ${program ? `Program record ${record.label}` : "Directory record"} is ${record.status}.` : ""}${record?.status === "Published" ? "" : ` Verify and publish the ${program ? "program" : "directory"} record to make it public.`}`
-                        : `This ${T.party === "provider" ? "program" : "institution"} is in the monitoring phase.`}
+                        ? `Decision recorded: ${fellow ? `${distinctionLabel(app.decision)} conferred` : app.decision}.${record ? ` ${program ? `Program record ${record.label}` : fellow ? `Register entry ${record.label}` : "Directory record"} is ${record.status}.` : ""}${record?.status === "Published" ? "" : ` Verify and publish the ${program ? "program record" : fellow ? "register entry" : "directory record"} to make it public.`}`
+                        : `This ${T.party === "provider" ? "program" : fellow ? "recipient" : "institution"} is in the continued-standing phase.`}
                   </span>
                   {!declined && (
                     <Link href={recordHref} className="p-btn-secondary">
-                      {record ? (program ? "Open the program record" : "Open the directory record") : "Go to directory records"}
+                      {record ? (program ? "Open the program record" : fellow ? "Open the register entry" : "Open the directory record") : "Go to directory records"}
                     </Link>
                   )}
                 </div>
@@ -382,7 +413,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                   </div>
                 ))}
               </dl>
-              <span className="p-eyebrow">{program ? "Program description and objectives" : "Institutional profile"}</span>
+              <span className="p-eyebrow">{program ? "Program description and objectives" : fellow ? "Qualifications and contributions" : "Institutional profile"}</span>
               <p className="m-0 whitespace-pre-wrap" style={{ font: "400 13.5px/1.6 var(--font-sans)" }}>
                 {app.profile || "—"}
               </p>

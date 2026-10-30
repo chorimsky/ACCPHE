@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { applications, complianceSubmissions, COMPLIANCE_TYPES, files, requirements } from "@/db/schema";
+import { applications, complianceSubmissions, COMPLIANCE_TYPES, files, requirements, type AppKind } from "@/db/schema";
 import { attempt, fail, ok, UserError, type ActionResult } from "@/lib/action";
 import { appTitle, trackOf } from "@/lib/domain";
 import { audit } from "@/server/audit";
@@ -24,7 +24,7 @@ async function own() {
 }
 
 /** "Provider — Program" for programs, the institution otherwise. */
-const who = (app: { kind: "institution" | "program"; name: string; programTitle: string }) => (app.kind === "program" ? `${app.name} — ${app.programTitle}` : app.name);
+const who = (app: { kind: AppKind; name: string; programTitle: string }) => (app.kind === "program" ? `${app.name} — ${app.programTitle}` : app.name);
 
 /** Officer (or the Applications team if no one can act on it), naming the program for program applications. */
 const alertStaff = (app: { id: string; officerId: string | null }, subject: string, text: string) => notifyOfficer(app.officerId, { subject, text, link: `/portal/applications/${app.id}` });

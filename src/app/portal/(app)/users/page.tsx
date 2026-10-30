@@ -22,9 +22,9 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   const tab = USER_STATUS.find((s) => s === sp.status) ?? "pending";
   const [all, apps] = await Promise.all([
     db.select().from(users).orderBy(desc(users.createdAt)),
-    db.select({ id: applications.id, ref: applications.ref, name: applications.name, kind: applications.kind, programTitle: applications.programTitle }).from(applications).orderBy(asc(applications.ref)),
+    db.select({ id: applications.id, ref: applications.ref, name: applications.name, kind: applications.kind, programTitle: applications.programTitle, fellowDesignation: applications.fellowDesignation }).from(applications).orderBy(asc(applications.ref)),
   ]);
-  const appOptions = apps.map((a) => ({ value: a.id, label: a.kind === "program" ? `${a.ref} — ${a.programTitle} (${a.name})` : `${a.ref} — ${a.name}` }));
+  const appOptions = apps.map((a) => ({ value: a.id, label: a.kind === "program" ? `${a.ref} — ${a.programTitle} (${a.name})` : a.kind === "fellow" ? `${a.ref} — ${a.name} (${a.fellowDesignation})` : `${a.ref} — ${a.name}` }));
   const rows = all.filter((u) => u.status === tab);
   return (
     <>

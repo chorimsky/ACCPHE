@@ -1,4 +1,4 @@
-import type { AppKind, Classification, Rating, Role, Vote } from "@/db/schema";
+import type { AppKind, Classification, DistinctionCode, Rating, Role, Vote } from "@/db/schema";
 
 /** The eight-stage institutional evaluation pathway. Index = applications.stage. */
 export const STAGES = [
@@ -164,6 +164,79 @@ export const PROGRAM_CATEGORIES = [
 export const PROVIDER_TYPES = ["University", "College", "Christian institution or seminary", "Professional academy", "Training organization", "Independent education provider", "Other"];
 export const PROGRAM_DELIVERY = ["In person", "Online", "Blended"];
 
+/* ─────────── College of Fellows & Professional Distinctions ─────────── */
+
+export const DISTINCTION_GROUPS = ["Council Fellowship", "Professional Certification", "Distinguished Council Recognition"] as const;
+
+/** The College's distinctions, in the order shown on /fellows. Certifications are renewed; the others do not expire. */
+export const DISTINCTIONS: { code: DistinctionCode; t: string; group: (typeof DISTINCTION_GROUPS)[number] }[] = [
+  { code: "FACCPHE", t: "Fellow of ACCPHE", group: "Council Fellowship" },
+  { code: "SFACCPHE", t: "Senior Fellow of ACCPHE", group: "Council Fellowship" },
+  { code: "DFACCPHE", t: "Distinguished Fellow of ACCPHE", group: "Council Fellowship" },
+  { code: "FCLM", t: "Fellow in Christian Leadership & Ministry", group: "Council Fellowship" },
+  { code: "CCHEP", t: "Certified Christian Higher Education Professional", group: "Professional Certification" },
+  { code: "DCEL", t: "Distinguished Christian Educational Leader", group: "Distinguished Council Recognition" },
+  { code: "DCS-ACCPHE", t: "Distinguished Christian Scholar", group: "Distinguished Council Recognition" },
+  { code: "DCME", t: "Distinguished Christian Ministry Educator", group: "Distinguished Council Recognition" },
+];
+
+export const distinction = (code: string) => DISTINCTIONS.find((d) => d.code === code);
+/** "Fellow of ACCPHE (FACCPHE)" */
+export const distinctionLabel = (code: string) => {
+  const d = distinction(code);
+  return d ? `${d.t} (${d.code})` : code;
+};
+/** Years a certification is valid before renewal. */
+export const CERTIFICATION_YEARS = 3;
+
+export const FELLOW_ROUTES = ["Application", "Nomination"] as const;
+
+export const FELLOW_STAGES = [
+  "Application or nomination",
+  "Eligibility & documentation review",
+  "Professional & ethical assessment",
+  "Review & decision",
+  "Formal recognition & registration",
+  "Continued professional standing",
+] as const;
+
+export const FELLOW_STAGE_DESC = [
+  "The application or nomination, with the professional information and supporting documentation required, has been received.",
+  "The College Secretariat reviews the submission for completeness and verifies the preliminary eligibility requirements.",
+  "Qualified reviewers evaluate the candidate’s credentials, experience, contributions, professional standing and evidence against the applicable standards.",
+  "The appropriate credentialing or recognition body considers the assessment findings and decides in accordance with the College’s procedures.",
+  "The candidate receives formal notification, the credential or distinction, and an official verification record.",
+  "Recognized individuals remain subject to the College’s professional conduct requirements; certification holders meet renewal and continuing professional development requirements.",
+];
+
+export const FELLOW_ACTIONS = [
+  "No action required. The College Secretariat is reviewing the submission and will confirm the documents required.",
+  "Upload the evidence listed below: qualifications, curriculum vitae, publications or other contributions, and professional references.",
+  "Respond to any request from the reviewers for further evidence or clarification.",
+  "No action required. The recognition body is considering the assessment findings.",
+  "No action required. The Secretariat is preparing the credential and the verification record.",
+  "Maintain the College’s professional conduct requirements; certification holders complete continuing professional development before renewal.",
+];
+
+export const FELLOW_CHECKS: string[][] = [
+  ["Submission acknowledged and reference issued", "Distinction sought confirmed", "Responsible officer assigned"],
+  ["Curriculum vitae and qualifications received", "Evidence of contributions received", "Professional references received", "Ethics declaration received"],
+  ["Reviewers appointed with conflict-of-interest declarations", "Candidate assessed against the assessment criteria", "Assessment findings documented"],
+  ["Assessment findings submitted to the recognition body", "Deliberations documented"],
+  ["Register entry verified and published", "Credential and verification number issued", "Guidance on use of the designation sent"],
+  ["Conduct and renewal requirements communicated"],
+];
+
+export const FELLOW_REQUIREMENTS = [
+  "Curriculum vitae",
+  "Academic and professional qualifications",
+  "Evidence of professional experience and leadership appointments",
+  "Publications, research or educational resources (where applicable)",
+  "Evidence of teaching, mentorship, ministry education or institutional contribution",
+  "Professional references",
+  "Declaration on professional ethics and conduct",
+];
+
 /* ─────────── Tracks: what differs between institutional and program evaluations ─────────── */
 
 export type Track = {
@@ -229,6 +302,23 @@ export const TRACKS: Record<AppKind, Track> = {
       { value: "Recognized Program", label: "Grant program recognition" },
     ],
   },
+  fellow: {
+    kind: "fellow",
+    label: "College of Fellows",
+    party: "candidate",
+    stages: FELLOW_STAGES,
+    desc: FELLOW_STAGE_DESC,
+    actions: FELLOW_ACTIONS,
+    checks: FELLOW_CHECKS,
+    requirements: FELLOW_REQUIREMENTS,
+    evaluationStage: 2,
+    findingsStage: null,
+    decisionStage: 3,
+    lastStage: FELLOW_STAGES.length - 1,
+    standards: 6,
+    voteOptions: ["Confer the distinction sought", "Confer a different distinction", "Decline", "Defer for further information"],
+    decisions: DISTINCTIONS.map((d) => ({ value: d.code, label: `Confer ${d.code}` })),
+  },
 };
 
 export const trackOf = (a: { kind: AppKind }) => TRACKS[a.kind] ?? TRACKS.institution;
@@ -238,7 +328,7 @@ export const isOpen = (a: { kind: AppKind; stage: number; decision: string }) =>
 /** Waiting for the authorized body's decision. */
 export const awaitingDecision = (a: { kind: AppKind; stage: number; decision: string }) => a.stage === trackOf(a).decisionStage && !a.decision;
 
-/** The heading for an application: the program title for programs, the institution otherwise. */
+/** The heading for an application: the program title for programs, the candidate or institution otherwise. */
 export const appTitle = (a: { kind: AppKind; name: string; programTitle: string }) => (a.kind === "program" && a.programTitle ? a.programTitle : a.name);
 
 /* ─────────── Roles and portal modules ─────────── */

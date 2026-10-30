@@ -5,9 +5,9 @@ import { redirect } from "next/navigation";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { APP_KINDS, applications, DOC_STATUS, files, PATHWAYS, requirements, reviews, users } from "@/db/schema";
+import { APP_KINDS, applications, DISTINCTION_CODES, DOC_STATUS, files, PATHWAYS, requirements, reviews, users, type DistinctionCode } from "@/db/schema";
 import { attempt, fail, ok, parseForm, zs, type ActionResult, type ActionState } from "@/lib/action";
-import { appTitle, RESPONSE_REQUIREMENT, trackOf } from "@/lib/domain";
+import { appTitle, distinctionLabel, FELLOW_ROUTES, RESPONSE_REQUIREMENT, trackOf } from "@/lib/domain";
 import { audit } from "@/server/audit";
 import { authorize, officeOf } from "@/server/auth";
 import { notifyAssigned, notifyInstitution, notifyModule, notifyStatus } from "@/server/notify";
@@ -25,6 +25,8 @@ async function staff() {
 const newSchema = z.object({
   kind: z.enum(APP_KINDS).default("institution"),
   programTitle: zs.opt(200),
+  fellowDesignation: zs.opt(20),
+  fellowRoute: zs.opt(20),
   name: zs.text("Institution or provider name", 200),
   country: zs.text("Country", 100),
   pathway: z.enum(PATHWAYS),
@@ -45,8 +47,10 @@ export async function logInquiry(_prev: ActionState, fd: FormData): Promise<Acti
     const parsed = parseForm(newSchema, fd);
     if ("error" in parsed) return fail(parsed.error);
     if (parsed.data.kind === "program" && !parsed.data.programTitle) return fail("Program title is required.");
+    if (parsed.data.kind === "fellow" && !DISTINCTION_CODES.includes(parsed.data.fellowDesignation as DistinctionCode)) return fail("Select the distinction sought.");
+    if (parsed.data.kind === "fellow" && !FELLOW_ROUTES.includes(parsed.data.fellowRoute as (typeof FELLOW_ROUTES)[number])) return fail("Choose application or nomination.");
     const app = await createApplication(parsed.data, actor, "staff");
-    return ok(`${app.kind === "program" ? "Program application" : "Inquiry"} logged as ${app.ref}`, { id: app.id });
+    return ok(`${app.kind === "program" ? "Program application" : app.kind === "fellow" ? `College of Fellows ${app.fellowRoute.toLowerCase()}` : "Inquiry"} logged as ${app.ref}`, { id: app.id });
   });
   if (res.ok) {
     refresh();
@@ -95,7 +99,7 @@ export async function moveStage(id: string, delta: 1 | -1): Promise<ActionResult
       "status",
     );
     if (delta > 0 && ns === T.decisionStage) {
-      await notifyModule("decisions", { subject: `For deliberation: ${title} (${app.ref})`, text: `${title}${app.kind === "program" ? ` (${app.name})` : ""} has been submitted to the Accreditation Commission. The review record is available in the portal for deliberation and voting.`, link: `/portal/decisions/${id}` }, { secretariat: false });
+      await notifyModule("decisions", { subject: `For deliberation: ${title} (${app.ref})`, text: `${title}${app.kind === "program" ? ` (${app.name})` : app.kind === "fellow" ? ` (${distinctionLabel(app.fellowDesignation)})` : ""} has been submitted to the ${app.kind === "fellow" ? "recognition body" : "Accreditation Commission"}. The review record is available in the portal for deliberation and voting.`, link: `/portal/decisions/${id}` }, { secretariat: false });
     }
     if (app.officerId && app.officerId !== user.id) await notifyStatus([app.officerId], { subject: `${title} moved to ${label}`, text: `${actor.who} moved ${title} (${app.ref}) to ${label}.`, link: `/portal/applications/${id}` });
     refresh();
@@ -220,14 +224,16 @@ export async function decide(id: string, decision: string): Promise<ActionResult
         text:
           d === "Declined"
             ? `The authorized body has declined the application for ${title}. Contact the Secretariat for information on the appeals procedure.`
-            : app.kind === "program"
+            : app.kind === "fellow"
+              ? `The recognition body has conferred ${distinctionLabel(d)} on ${app.name}. The credential and the entry in the College’s credential verification register, with its verification number, will be issued after verification.`
+              : app.kind === "program"
               ? `The authorized body has recorded its decision for ${title}: ${d}. Your certificate and the public program record, with its verification number, will be issued after verification. The accreditation applies only to the approved program, not to the provider or its other offerings.`
               : `The authorized body has recorded its decision for ${app.name}: ${d}. The official directory record will be published after verification. Please represent your institution's status accurately: membership is not accreditation.`,
       },
       "status",
     );
     refresh();
-    return ok(d === "Declined" ? "Decision recorded" : app.kind === "program" ? "Decision recorded — draft program record created" : "Decision recorded — draft directory record created");
+    return ok(d === "Declined" ? "Decision recorded" : app.kind === "program" ? "Decision recorded — draft program record created" : app.kind === "fellow" ? "Decision recorded — draft register entry created" : "Decision recorded — draft directory record created");
   });
 }
 
@@ -246,7 +252,7 @@ export async function assignReviewer(id: string, reviewerId: string): Promise<Ac
     await audit({ actorId: user.id, who: actor.who, action: "review.assign", entityType: "application", entityId: id, summary: `${r.name} appointed to review ${appTitle(app)}` });
     await notifyAssigned(r.id, {
       subject: `Review assignment: ${appTitle(app)} (${app.ref})`,
-      text: `You have been appointed to the review team for ${app.kind === "program" ? `the program “${appTitle(app)}” offered by ${app.name}` : app.name} (${app.country}). Before opening the evaluation you will be asked to declare any conflict of interest.`,
+      text: `You have been appointed to the review team for ${app.kind === "program" ? `the program “${appTitle(app)}” offered by ${app.name}` : app.kind === "fellow" ? `${app.name}, a candidate for ${distinctionLabel(app.fellowDesignation)}` : app.name} (${app.country}). Before opening the evaluation you will be asked to declare any conflict of interest.`,
       link: "/portal/reviews",
     });
     refresh();
@@ -304,6 +310,10 @@ const editSchema = z.object({
   programDelivery: zs.opt(60),
   programDuration: zs.opt(120),
   programLearners: zs.opt(600),
+  fellowDesignation: zs.opt(20),
+  fellowEmail: zs.opt(200),
+  fellowPosition: zs.opt(200),
+  fellowAffiliation: zs.opt(200),
 });
 
 const FIELD_LABELS: Record<string, string> = {
@@ -326,6 +336,10 @@ const FIELD_LABELS: Record<string, string> = {
   programDelivery: "delivery mode",
   programDuration: "duration",
   programLearners: "intended learners",
+  fellowDesignation: "distinction sought",
+  fellowEmail: "candidate’s email",
+  fellowPosition: "candidate’s position",
+  fellowAffiliation: "candidate’s institution or organization",
 };
 
 /** Correct the details of an application (each correction is recorded). */
@@ -337,6 +351,7 @@ export async function updateApplication(_prev: ActionState, fd: FormData): Promi
     const { id, ...d } = parsed.data;
     const app = await loadApplication(id);
     if (app.kind === "program" && !d.programTitle) return fail("Program title is required.");
+    if (app.kind === "fellow" && !DISTINCTION_CODES.includes(d.fellowDesignation as DistinctionCode)) return fail("Select the distinction sought.");
     const changed = (Object.keys(d) as (keyof typeof d)[]).filter((k) => String(app[k] ?? "") !== String(d[k]));
     if (!changed.length) return ok("No changes", { id });
     await db.update(applications).set({ ...d, updatedAt: new Date() }).where(eq(applications.id, id));

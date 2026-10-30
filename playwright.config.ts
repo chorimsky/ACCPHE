@@ -31,7 +31,7 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
-    viewport: { width: 1360, height: 900 },
+    viewport: { width: 1440, height: 900 },
     // Uses the installed Google Chrome when PW_CHANNEL=chrome (no browser download needed); otherwise Playwright's Chromium.
     ...(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}),
   },

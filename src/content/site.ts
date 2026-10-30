@@ -683,6 +683,18 @@ export const SEO: Record<string, [string, string]> = {
     "About the Council — Mission, Vision, Values | ACCPHE",
     "ACCPHE is an independent, internationally oriented quality assurance organization advancing academic excellence, institutional integrity, and responsible governance in Christian and private higher education."
   ],
+  "fellows": [
+    "ACCPHE International College of Fellows & Professional Distinctions",
+    "Fellowships (FACCPHE, SFACCPHE, DFACCPHE, FCLM), professional certification (CCHEP) and distinguished recognitions (DCEL, DCS-ACCPHE, DCME) for Christian scholars, educators and leaders. Apply, nominate, or verify a credential."
+  ],
+  "fellowsApply": [
+    "Apply or Nominate — ACCPHE College of Fellows",
+    "Apply for, or nominate a distinguished individual for, an ACCPHE fellowship, professional certification or distinguished recognition."
+  ],
+  "fellowsDirectory": [
+    "College of Fellows Directory — ACCPHE Credential Verification Register",
+    "Verify ACCPHE fellowships, professional certifications and distinguished recognitions by name or verification number (ACCPHE-F-YYYY-NNNN)."
+  ],
   "programDirectory": [
     "Directory of Approved Programs & Verification | ACCPHE",
     "Verify ACCPHE program accreditation or recognition: approved program title, provider, scope, validity period and unique verification number for every approved certificate, diploma and training program."
@@ -767,6 +779,7 @@ export const I18N: Record<Lang, Chrome> = {
       "Home",
       "About Us",
       "Accreditation",
+      "College of Fellows & Distinctions",
       "Standards & Policies",
       "Governance",
       "Member Institutions",
@@ -801,6 +814,7 @@ export const I18N: Record<Lang, Chrome> = {
       "Accueil",
       "À propos",
       "Accréditation",
+      "Collège des Fellows et distinctions",
       "Normes et politiques",
       "Gouvernance",
       "Établissements membres",
@@ -835,6 +849,7 @@ export const I18N: Record<Lang, Chrome> = {
       "Inicio",
       "Quiénes somos",
       "Acreditación",
+      "Colegio de Fellows y distinciones",
       "Normas y políticas",
       "Gobernanza",
       "Instituciones miembro",
@@ -869,6 +884,7 @@ export const I18N: Record<Lang, Chrome> = {
       "Início",
       "Sobre nós",
       "Acreditação",
+      "Colégio de Fellows e distinções",
       "Normas e políticas",
       "Governança",
       "Instituições membros",
@@ -1096,4 +1112,132 @@ export const SOCIAL_LINKS = {
   linkedin: "https://www.linkedin.com/company/accphe",
   facebook: "https://www.facebook.com/accphe",
   instagram: "https://www.instagram.com/accphe",
+};
+
+/* ─────────── College of Fellows & Professional Distinctions (/fellows) ─────────── */
+
+export const FELLOWS = {
+  tagline: "Recognizing Excellence. Honoring Scholarship. Advancing Christian Educational Leadership.",
+  kicker: "A Distinguished International Community of Scholars, Educators, and Christian Leaders",
+  lead: "Excellence in scholarship, education, and Christian leadership deserves meaningful recognition.",
+  intro: [
+    "The ACCPHE International College of Fellows & Professional Distinctions is an initiative of the Accreditation & Compliance Council for Christian and Private Higher Education (ACCPHE), designed to recognize accomplished scholars, professors, lecturers, theologians, researchers, pastors, educational executives, and Christian intellectuals whose contributions demonstrate professional excellence, integrity, and lasting influence.",
+    "The College brings together individuals committed to advancing Christian scholarship, strengthening educational institutions, developing future leaders, and contributing meaningfully to the intellectual and spiritual development of society.",
+    "Through selective fellowships, professional certifications, and distinguished recognitions, the College seeks to establish a respected international community united by scholarship, professional achievement, ethical leadership, and a shared commitment to educational excellence.",
+  ],
+  introClose: "More than recognition, the College represents a commitment to excellence, professional distinction, and continued contribution.",
+  why: [
+    "Across the world, dedicated scholars, educators, and Christian leaders contribute to the advancement of knowledge, theological understanding, educational development, and institutional leadership.",
+    "Their work deserves recognition grounded in credible standards and professional evaluation.",
+    "The ACCPHE College of Fellows & Professional Distinctions is designed to provide that recognition through a structured framework that values demonstrated achievement, professional competence, scholarly contribution, and ethical conduct.",
+    "Recognition by the College is intended to represent more than a ceremonial honor. It reflects an individual’s commitment to professional standards and contribution to Christian and private higher education or related ministry education.",
+    "The College seeks to foster an international network in which distinguished individuals can exchange knowledge, strengthen professional relationships, encourage scholarship, and contribute to the development of educational institutions and future generations of leaders.",
+  ],
+  pathwaysIntro: "The College offers three pathways for recognizing professional competence, sustained achievement, and exceptional contributions.",
+  groups: [
+    {
+      sub: "A Distinction of Professional Excellence and Sustained Contribution",
+      d: [
+        "Council Fellowship recognizes established scholars, educators, intellectuals, and leaders who demonstrate substantial contributions to their professions, institutions, and communities.",
+        "Fellowship is conferred through a selective process that considers professional experience, scholarly achievement, leadership, ethical standing, and documented impact.",
+      ],
+    },
+    {
+      sub: "Recognizing Demonstrated Competence and Professional Standards",
+      d: [
+        "Professional Certification provides a structured pathway for qualified individuals to demonstrate competence in Christian higher education, educational administration, and related professional practice.",
+        "Unlike honorary distinctions, certification is based on defined competency requirements, professional experience, documented evidence, and formal assessment.",
+      ],
+    },
+    {
+      sub: "Honoring Exceptional Contributions to Scholarship, Education, and Christian Leadership",
+      d: [
+        "Distinguished Council Recognition acknowledges individuals whose work has made significant contributions to intellectual development, educational leadership, theological instruction, or Christian ministry education.",
+        "These distinctions recognize exceptional achievement, sustained influence, and verifiable professional contributions.",
+      ],
+    },
+  ],
+  /** Descriptions of the eight distinctions, in the order of DISTINCTIONS (src/lib/domain.ts). */
+  distinctions: [
+    "Awarded to qualified academics, scholars, educators, theologians, and institutional or ministry education leaders who demonstrate established professional achievement and meaningful contributions to their fields.",
+    "Recognizes experienced professionals with a sustained record of scholarly achievement, educational leadership, institutional development, or significant contributions to Christian education and ministry training.",
+    "The College’s highest proposed fellowship distinction, reserved for individuals whose exceptional and sustained contributions have advanced Christian scholarship, educational leadership, theological education, or institutional development.",
+    "A specialized fellowship recognizing accomplished Christian leaders whose sustained contributions to ministry education, leadership development, theological instruction, or Christian institutional advancement demonstrate significant professional impact.",
+    "Designed for lecturers, academic administrators, educational practitioners, and higher education professionals who demonstrate competence in teaching, academic practice, institutional administration, or educational development. Certification requires successful assessment against the College’s applicable professional standards.",
+    "Recognizes university leaders, college founders, educational executives, and institutional administrators whose leadership has contributed significantly to educational development, institutional growth, or academic excellence.",
+    "Recognizes researchers, authors, theologians, professors, and Christian intellectuals whose scholarly contributions have advanced knowledge, research, theological understanding, or Christian intellectual discourse.",
+    "Recognizes pastors, Bible teachers, theological educators, and ministry trainers whose sustained contributions have strengthened biblical education, theological instruction, ministerial formation, or Christian leadership development.",
+  ],
+  eligibleIntro: "The College welcomes applications and nominations from qualified individuals working across Christian and private higher education, theological scholarship, educational leadership, and ministry education. Eligible professional backgrounds may include:",
+  eligible: [
+    "University professors, lecturers, and academic researchers.",
+    "Christian scholars, theologians, authors, and intellectuals.",
+    "University presidents, rectors, deans, and academic administrators.",
+    "Founders and leaders of universities, colleges, and theological institutions.",
+    "Pastors, Bible teachers, and ministry educators.",
+    "Christian leadership trainers and theological curriculum developers.",
+    "Educational consultants, quality assurance professionals, and institutional development specialists.",
+    "Other accomplished professionals whose contributions align with the College’s mandate.",
+  ],
+  eligibleNotes: [
+    "Applicants are considered according to the eligibility requirements of the specific certification, fellowship, or distinction sought.",
+    "Professional standing, public prominence, or religious office alone does not guarantee recognition.",
+  ],
+  valueLead: "Recognition that extends beyond a certificate.",
+  valueIntro: "The ACCPHE College of Fellows & Professional Distinctions is designed to provide recognized individuals with opportunities for professional affiliation, scholarly engagement, continued development, and meaningful contribution.",
+  value: [
+    { t: "Professional Recognition", d: "Receive a formal ACCPHE credential or distinction following successful evaluation and approval under the applicable standards." },
+    { t: "Authorized Professional Designation", d: "Eligible credential holders and fellows may use their approved ACCPHE designation in professional biographies, academic profiles, publications, and other appropriate professional communications." },
+    { t: "International Professional Community", d: "Become part of a developing network of scholars, educators, theologians, intellectuals, and Christian leaders committed to educational excellence and professional integrity." },
+    { t: "Official Credential Verification", d: "Approved recipients are entered into the College’s credential verification register, providing a means of confirming the authenticity and current status of their recognition." },
+    { t: "Scholarly and Professional Engagement", d: "Access opportunities, as available, for scholarly dialogue, professional learning, research collaboration, educational forums, and knowledge exchange." },
+    { t: "Leadership and Advisory Opportunities", d: "Qualified members may be considered for participation in appropriate advisory groups, scholarly initiatives, educational development projects, and professional activities of the Council." },
+    { t: "Continuing Professional Development", d: "Engage in activities designed to encourage lifelong learning, professional competence, educational innovation, and ethical leadership." },
+    { t: "International Fellowship Convocations", d: "Eligible members may participate in College convocations, professional gatherings, and formal recognition ceremonies organized by ACCPHE." },
+  ],
+  integrity: [
+    "The credibility of every professional distinction depends on the integrity of the process through which it is conferred.",
+    "The College is committed to establishing and maintaining clear eligibility standards, evidence-based assessment, impartial review, ethical conduct, and transparent recognition procedures.",
+    "Professional certifications, fellowships, and distinguished recognitions are evaluated according to their respective requirements.",
+    "Recognition is not automatic, and payment of an application or assessment fee does not guarantee approval.",
+    "The College’s distinctions represent recognition issued by ACCPHE within its own professional framework. They do not constitute academic degrees, professional licenses, governmental endorsements, or institutional accreditation.",
+  ],
+  stepsIntro: "The College follows a structured review process designed to ensure fairness, professional accountability, and confidence in its decisions.",
+  steps: [
+    { t: "Select Your Recognition Pathway", d: "Review the available professional certifications, fellowships, and distinguished recognitions to identify the pathway that corresponds to your qualifications, experience, and professional contributions." },
+    { t: "Submit an Application or Nomination", d: "Complete the relevant application or nomination form and provide the required professional information and supporting documentation." },
+    { t: "Eligibility and Documentation Review", d: "The College Secretariat reviews submissions for completeness and verifies that applicants meet the preliminary eligibility requirements." },
+    { t: "Professional and Ethical Assessment", d: "Qualified reviewers evaluate the applicant’s credentials, experience, contributions, professional standing, and supporting evidence against the applicable standards." },
+    { t: "Review and Decision", d: "The appropriate credentialing or recognition body considers the assessment findings and makes a decision in accordance with the College’s approved procedures." },
+    { t: "Formal Recognition and Registration", d: "Successful candidates receive formal notification, the appropriate credential or distinction, and an official verification record." },
+    { t: "Continued Professional Standing", d: "Recognized individuals remain subject to the College’s professional conduct requirements. Certification holders must also satisfy applicable renewal and continuing professional development requirements." },
+  ],
+  evidenceIntro: "Applicants and nominees may be asked to provide relevant documentation demonstrating their qualifications, professional contributions, and suitability for recognition. Supporting evidence may include:",
+  evidence: [
+    "Academic and professional qualifications.",
+    "Verified professional experience and leadership appointments.",
+    "Published books, research, scholarly articles, or educational resources.",
+    "Teaching, curriculum development, and academic administration experience.",
+    "Contributions to institutional establishment, improvement, or development.",
+    "Evidence of mentorship, student development, theological instruction, or ministry education.",
+    "Professional references and independently verifiable achievements.",
+    "Relevant declarations concerning professional ethics and conduct.",
+  ],
+  evidenceNote: "The evidence required varies according to the distinction or certification being pursued.",
+  closingLead: "Your contribution matters. Your scholarship matters. Your leadership matters.",
+  closing: [
+    "Whether you are advancing knowledge through research, developing future leaders through education, strengthening institutions, or equipping others through theological and ministry instruction, your work contributes to a wider legacy of learning and service.",
+    "The ACCPHE International College of Fellows & Professional Distinctions seeks to bring together individuals who understand that professional excellence carries both recognition and responsibility.",
+    "We invite qualified scholars, educators, intellectuals, and Christian leaders to explore the College’s recognition pathways and consider becoming part of this international community.",
+  ],
+  closingTagline: "Pursue Excellence. Earn Distinction. Contribute to a Lasting Legacy.",
+  /** What reviewers rate each candidate against (fixed length: reviews depend on it). */
+  criteria: [
+    { t: "Academic and Professional Qualifications", d: "Relevant qualifications, credentials and professional preparation for the distinction sought." },
+    { t: "Professional Experience and Leadership", d: "Verified experience, appointments and leadership responsibilities, and their scope and duration." },
+    { t: "Scholarly and Educational Contribution", d: "Publications, research, curriculum, teaching or educational resources and their influence." },
+    { t: "Institutional and Ministry Impact", d: "Contributions to establishing, improving or developing institutions, ministries, and future leaders." },
+    { t: "Professional Standing and References", d: "Reputation among peers, independently verifiable achievements, and the strength of professional references." },
+    { t: "Ethical Conduct and Integrity", d: "Declarations on professional ethics and conduct, and the absence of unresolved concerns." },
+  ],
 };

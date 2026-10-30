@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { and, desc, eq, gte, inArray, lte, or } from "drizzle-orm";
 import { db } from "@/db";
-import { articles, programRecordEvents, programRecords, recordEvents, records, siteContent } from "@/db/schema";
+import { articles, fellowEvents, fellows, programRecordEvents, programRecords, recordEvents, records, siteContent } from "@/db/schema";
 import { DEFAULT_NOTICE } from "@/content/site";
 import { isoDay } from "@/lib/format";
 
@@ -88,4 +88,33 @@ export async function programByVerification(code: string) {
 
 export async function programHistory(programId: string) {
   return db.select().from(programRecordEvents).where(eq(programRecordEvents.programId, programId)).orderBy(desc(programRecordEvents.createdAt));
+}
+
+/* ─────────── College of Fellows Directory (credential verification register) ─────────── */
+
+const fellowVisible = or(eq(fellows.status, "Published"), and(eq(fellows.verified, true), inArray(fellows.status, ["Suspended", "Withdrawn", "Expired"])));
+
+export const publicFellows = cache(async () => db.select().from(fellows).where(fellowVisible).orderBy(fellows.name));
+
+export async function fellowBySlug(slug: string) {
+  const [r] = await db
+    .select()
+    .from(fellows)
+    .where(and(eq(fellows.slug, slug), fellowVisible));
+  return r ?? null;
+}
+
+/** Look up a public register entry by its verification number (case- and spacing-insensitive). */
+export async function fellowByVerification(code: string) {
+  const v = code.trim().toUpperCase().replace(/\s+/g, "");
+  if (!/^ACCPHE-F-\d{4}-\d{4}$/.test(v)) return null;
+  const [r] = await db
+    .select()
+    .from(fellows)
+    .where(and(eq(fellows.verification, v), fellowVisible));
+  return r ?? null;
+}
+
+export async function fellowHistory(fellowId: string) {
+  return db.select().from(fellowEvents).where(eq(fellowEvents.fellowId, fellowId)).orderBy(desc(fellowEvents.createdAt));
 }
